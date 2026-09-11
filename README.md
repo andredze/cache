@@ -1,3 +1,3 @@
 # Cache
-### for Vladimor C++ course
+### for Vladimirov C++ course
 ### made by Kiselev Andrey & Khasanov Amir
