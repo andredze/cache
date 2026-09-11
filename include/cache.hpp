@@ -1,8 +1,13 @@
 #pragma once
 
+//--------------------------------------------------------------------------------
+
 #include <cstddef>
+#include <cstdint>
 #include <list>
 #include <unordered_map>
+
+//--------------------------------------------------------------------------------
 
 namespace Caches {
 
@@ -18,3 +23,10 @@ class Cache_t {
 
 
 }; // namespace Caches
+
+//--------------------------------------------------------------------------------
+
+enum class cache_err_t : std::uint8_t {
+	kSuccess     = 0,
+	kOpenFileErr = 1,
+};
