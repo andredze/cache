@@ -6,27 +6,33 @@
 #include <cstdint>
 #include <list>
 #include <unordered_map>
+#include <vector>
+#include <iostream>
 
 //--------------------------------------------------------------------------------
 
-namespace Caches {
-
-template <typename T>
-class Cache_t {
-	std::size_t size_;
-	std::list<T> cache_;
+// template <typename T>
+// class Cache_t {
+// 	std::size_t  size_ ;
+// 	std::list<T> cache_;
 	
-	using ListIt = typename std::list<T>::iterator;
-	std::unordered_map<typename KeyT, ListIt>;
+// 	using ListIt = typename std::list<T>::iterator;	//using == typedef
+// 	std::unordered_map<typename KeyT, ListIt>;
 
-	Cache_t(std::size_t size);
+// 	Cache_t(std::size_t size);
 
 
-}; // namespace Caches
+// }; // namespace Caches
 
 //--------------------------------------------------------------------------------
 
-enum class cache_err_t : std::uint8_t {
+enum class CacheErr_t : std::uint8_t {
 	kSuccess     = 0,
 	kOpenFileErr = 1,
 };
+
+//--------------------------------------------------------------------------------
+
+std::vector<int> ReadIntDataFromCin ();
+
+//--------------------------------------------------------------------------------

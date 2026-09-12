@@ -4,7 +4,12 @@
 const int kDefaultCacheSize = 10;
 
 int main() {
-	Caches::Cache_t<std::string> (kDefaultCacheSize);
+
+	std::vector<int> data = ReadIntDataFromCin ();
+
+	for (int i = 0; i < data.size (); i++) {
+		std::cout << data.at (i) << std::endl;
+	}
 
 	return EXIT_FAILURE;
 }
