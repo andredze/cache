@@ -5,10 +5,10 @@ const int kDefaultCacheSize = 10;
 
 int main() {
 
-	std::vector<int> data = ReadIntDataFromCin ();
+	std::deque<int> data = ReadIntDataFromCin ();
 
-	for (int i = 0; i < data.size (); i++) {
-		std::cout << data.at (i) << std::endl;
+	while (data.size () > 0) {
+		std::cout << GetNextCacheElement (&data) << std::endl;
 	}
 
 	return EXIT_FAILURE;

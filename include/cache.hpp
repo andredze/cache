@@ -6,8 +6,12 @@
 #include <cstdint>
 #include <list>
 #include <unordered_map>
-#include <vector>
+#include <deque>
 #include <iostream>
+
+//--------------------------------------------------------------------------------
+
+const int kPoison = 66677752;
 
 //--------------------------------------------------------------------------------
 
@@ -33,6 +37,8 @@ enum class CacheErr_t : std::uint8_t {
 
 //--------------------------------------------------------------------------------
 
-std::vector<int> ReadIntDataFromCin ();
+std::deque<int> ReadIntDataFromCin ();
+int GetCacheInputCapacity (std::deque<int>* data);
+int GetNextCacheElement (std::deque<int>* data);
 
 //--------------------------------------------------------------------------------
