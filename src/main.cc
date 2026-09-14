@@ -1,13 +1,14 @@
 #include <cstdlib>
-#include <cache.hpp>
+#include <string>
+#include "cache.hpp"
 
 //————————————————————————————————————————————————————————————————————————————————
 
 int main ()
 {
-	std::deque<int> data = ReadIntDataFromCin ();
+	// std::deque<int> data = ReadIntDataFromCin ();
 
-	Cache c (10);
+	Cache<std::string, int> cache (10);
 
 	return EXIT_FAILURE;
 }

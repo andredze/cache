@@ -16,7 +16,7 @@ class Cache {
 	std::list<T> cache_;
 	
 	using ListIt = typename std::list<T>::iterator;
-	std::unordered_map<int, ListIt> hash_map_;
+	std::unordered_map<KeyT, ListIt> hash_map_;
 
 public:
 	Cache (std::size_t input_size) : size_ (input_size), cache_(input_size, 0) {}
@@ -36,10 +36,7 @@ enum class CacheErr_t : std::uint8_t {
 
 //--------------------------------------------------------------------------------
 
-// FIXME: возврат структуры ???? втф
-// FIXME: почему не просто очередь, или просто массив w
 std::deque<int> ReadIntDataFromCin ();
-int GetCacheInputCapacity (std::deque<int>* data);
 int GetNextCacheElement   (std::deque<int>* data);
 
 //--------------------------------------------------------------------------------

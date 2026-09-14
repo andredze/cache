@@ -1,9 +1,16 @@
-#include <cache.hpp>
+#include "cache.hpp"
+#include <queue>
 #include <iostream>
 
 //————————————————————————————————————————————————————————————————————————————————
 
-//deque = double-ended queue
+int ParseInputData (std::string              input_buffer,
+                    std::queue<std::size_t> &cache_sizes,
+                    std::queue<std::size_t> &keys)
+{
+    return 0;
+}
+// //deque = double-ended queue
 
 std::deque<int> ReadIntDataFromCin ()
 {
@@ -20,10 +27,10 @@ std::deque<int> ReadIntDataFromCin ()
 
 //————————————————————————————————————————————————————————————————————————————————
 
-int GetNextCacheElement (std::deque<int>* data)
+int Caches::GetNextKey (std::deque<int>* data)
 {
-    if ((*data).size () == 0) { //check size
-        return kPoison;
+    if ((*data).size () == 0) {
+        return -1;
     }
 
     //==================================================
@@ -33,13 +40,6 @@ int GetNextCacheElement (std::deque<int>* data)
     (*data).pop_front ();       //remove first element
 
     return cap;
-}
-
-//————————————————————————————————————————————————————————————————————————————————
-
-int GetCacheInputCapacity (std::deque<int>* data)
-{
-    return GetNextCacheElement (data);
 }
 
 //————————————————————————————————————————————————————————————————————————————————

@@ -2,28 +2,8 @@
 
 //--------------------------------------------------------------------------------
 
-class LRU : public Cache {
+template <typename T, typename KeyT>
+class LRU : public Cache<T, KeyT> {
 public :
-
-//==================================================
-
-    bool lruAdd ( int value )
-    {
-        bool hit = LookUpElement (value);
-
-        if (hit) {
-            cache_.remove     (value);
-            cache_.push_front (value);
-
-            return true;
-        }
-        else {
-            cache_.pop_back   ();
-            cache_.push_front (value);
-        }
-
-        return false;
-    }
-
-//==================================================
-} ;
+	bool Add(int value);
+};
