@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O0 -g -I include/
+CFLAGS = -Wall -Wextra -O0 -g -I include/
 SRC = src/*.cc
 
 all:
