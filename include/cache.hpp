@@ -10,40 +10,22 @@
 
 //--------------------------------------------------------------------------------
 
-const int kPoison = 66677752;
-
-//--------------------------------------------------------------------------------
-
+template <typename T, typename KeyT>
 class Cache {
-public:
-	std::size_t    size_ ;
-	std::list<int> cache_;
+	std::size_t  size_ ;
+	std::list<T> cache_;
 	
-	using ListIt = typename std::list<int>::iterator;	//using == typedef
+	using ListIt = typename std::list<T>::iterator;
 	std::unordered_map<int, ListIt> hash_map_;
 
-	//==================================================
+public:
+	Cache (std::size_t input_size) : size_ (input_size), cache_(input_size, 0) {}
 
-	Cache (std::size_t input_size) : size_ (input_size) 
+	bool ContainsKey (KeyT key)
 	{
-		for (std::size_t i = 0; i < input_size; i++) {
-			cache_.insert(cache_.end(), kPoison);
-		}
-	} // class creator
-
-	//==================================================
-
-	bool LookUpElement (int target_value)
-	{
-		if (hash_map_.contains (target_value)) {
-			return true;
-		}
-
-		return false;
+		return hash_map_.contains (key);
 	}
-
-	//==================================================
-}; // namespace Caches
+};
 
 //--------------------------------------------------------------------------------
 
@@ -54,6 +36,8 @@ enum class CacheErr_t : std::uint8_t {
 
 //--------------------------------------------------------------------------------
 
+// FIXME: возврат структуры ???? втф
+// FIXME: почему не просто очередь, или просто массив w
 std::deque<int> ReadIntDataFromCin ();
 int GetCacheInputCapacity (std::deque<int>* data);
 int GetNextCacheElement   (std::deque<int>* data);
