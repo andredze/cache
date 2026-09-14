@@ -26,17 +26,21 @@ public:
 
 	Cache (std::size_t input_size) : size_ (input_size) 
 	{
-		for (int i = 0; i < input_size; i++) {
+		for (std::size_t i = 0; i < input_size; i++) {
 			cache_.insert(cache_.end(), kPoison);
 		}
 	} // class creator
 
 	//==================================================
 
-	// int LookUpElement (int target_value)
-	// {
-	// 	if ()
-	// }
+	bool LookUpElement (int target_value)
+	{
+		if (hash_map_.contains (target_value)) {
+			return true;
+		}
+
+		return false;
+	}
 
 	//==================================================
 }; // namespace Caches
