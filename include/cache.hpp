@@ -10,12 +10,12 @@
 
 //--------------------------------------------------------------------------------
 
-template <typename T, typename KeyT>
+template <typename PageT, typename KeyT>
 class Cache {
-	std::size_t  size_ ;
-	std::list<T> cache_;
+	std::size_t      size_ ;
+	std::list<PageT> cache_;
 	
-	using ListIt = typename std::list<T>::iterator;
+	using ListIt = typename std::list<PageT>::iterator;
 	std::unordered_map<KeyT, ListIt> hash_map_;
 
 public:

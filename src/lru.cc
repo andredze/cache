@@ -2,7 +2,8 @@
 
 //————————————————————————————————————————————————————————————————————————————————
 
-bool LRU::Add (KeyT key,  slow_get_page)
+template <typename PageT, typename KeyT>
+bool LRU<PageT, KeyT>::Add (KeyT key, PageT slow_get_page)
 {
 	bool hit = LookUpElement (key);
 
