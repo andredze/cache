@@ -26,7 +26,7 @@ std::deque<int> ReadIntDataFromCin ()
 
 //————————————————————————————————————————————————————————————————————————————————
 
-int Caches::GetNextKey (std::deque<int>* data)
+int GetNextKey (std::deque<int>* data)
 {
     if ((*data).size () == 0) {
         return -1;

@@ -2,8 +2,8 @@
 
 //--------------------------------------------------------------------------------
 
-template <typename T, typename KeyT>
-class LRU : public Cache<T, KeyT> {
+template <typename PageT, typename KeyT>
+class LRU : public Cache<PageT, KeyT> {
 public :
-	bool Add(int value);
+	bool Add (int value);
 };
