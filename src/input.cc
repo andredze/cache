@@ -5,8 +5,7 @@
 //————————————————————————————————————————————————————————————————————————————————
 
 int ParseInputData (std::string              input_buffer,
-                    std::queue<std::size_t> &cache_sizes,
-                    std::queue<std::size_t> &keys)
+                    std::queue<std::size_t> &numbers_sequence)
 {
     return 0;
 }
