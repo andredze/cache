@@ -1,44 +1,44 @@
 #include "cache.hpp"
+#include "error_handle.hpp"
 #include <queue>
 #include <iostream>
 
+using NumSequence_t = std::queue<std::size_t>;
+
 //————————————————————————————————————————————————————————————————————————————————
 
-int ParseInputData (std::string              input_buffer,
-                    std::queue<std::size_t> &numbers_sequence)
+int ReadNumSequence (NumSequence_t &num_sequence, std::istream input_stream)
 {
-    return 0;
-}
-// //deque = double-ended queue
-
-std::deque<int> ReadIntDataFromCin ()
-{
-    std::deque<int> input_data = {};
-
     int cur_number = 0;
 
-    while (std::cin >> cur_number) {
-        input_data.push_back (cur_number);
+    while (input_stream >> cur_number) {
+        if (cur_number < 0) {
+            // TODO: change PrintError, so you can pass multiple args
+            PrintError("Expected non-negative number, given: ");
+            return -1;
+        }
+
+        num_sequence.push (cur_number);
     }
 
-    return input_data;
+    return 0;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-int GetNextKey (std::deque<int>* data)
+int GetNextKey (NumSequence_t &num_sequence)
 {
-    if ((*data).size () == 0) {
+    if (num_sequence.size () == 0) {
         return -1;
     }
 
     //==================================================
 
-    int cap = (*data).front (); //take data
+    std::size_t next_num = num_sequence.front ();
 
-    (*data).pop_front ();       //remove first element
+    num_sequence.pop ();
 
-    return cap;
+    return next_num;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
