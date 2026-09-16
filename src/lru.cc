@@ -1,22 +1,23 @@
 #include "lru.hpp"
+#include <iostream>
 
 //————————————————————————————————————————————————————————————————————————————————
 
 template <typename PageT, typename KeyT>
-bool LRU<PageT, KeyT>::Add (KeyT key, PageT slow_get_page)
+bool LRUCache<PageT, KeyT>::Add (KeyT key)
 {
-	bool hit = LookUpElement (key);
-
+	PageT* page_p = LookUpElement (key);
+	
 	// FIXME: путаем key и page
-	if (hit) {
-		cache_.remove     (value);
-		cache_.push_front (value);
+	if (page_p) {
+		cache_.remove     (page_p);
+		cache_.push_front (page_p);
 
 		return true;
 	}
 	else {
 		cache_.pop_back   ();
-		cache_.push_front (value);
+		cache_.push_front (page_p);
 	}
 
 	return false;

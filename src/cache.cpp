@@ -3,12 +3,9 @@
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-class LRUCache : public Cache<PageT, KeyT> {
-public:
-    using Cache<PageT, KeyT>::cache_;
-    using Cache<PageT, KeyT>::hash_map_;
-
-	bool Add (KeyT key);
-};
+bool Cache<PageT, KeyT>::ContainsKey (KeyT key)
+{
+    return hash_map_.contains (key);
+}
 
 //--------------------------------------------------------------------------------
