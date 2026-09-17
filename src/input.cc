@@ -14,7 +14,7 @@ int ReadNumSequence (NumSequence_t &num_sequence, std::istream input_stream)
     while (input_stream >> cur_number) {
         if (cur_number < 0) {
             // TODO: change PrintError, so you can pass multiple args
-            PrintError("Expected non-negative number, given: ");
+            PrintError ("Expected non-negative number, given: ");
             return -1;
         }
 
