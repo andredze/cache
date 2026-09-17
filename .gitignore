@@ -1,10 +1,10 @@
-.o
-.out
+*.o
+*.out
 .vscode
-.txt
+*.txt
 use
 
-.log
+*.log
 
 compile_commands.json
 
