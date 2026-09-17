@@ -12,9 +12,8 @@
 
 template <typename PageT, typename KeyT>
 class Cache {
-	std::size_t size_;
-
 protected:
+	std::size_t      size_;
 	std::list<PageT> cache_;
 	
 	using ListIt = typename std::list<PageT>::iterator;
