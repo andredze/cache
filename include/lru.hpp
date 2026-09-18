@@ -18,7 +18,9 @@
         using Cache<PageT, KeyT>::Clear      ;
         using Cache<PageT, KeyT>::IsFull     ;
         using Cache<PageT, KeyT>::IsEmpty    ;
-        using Cache<PageT, KeyT>::Dump       ;
+        using Cache<PageT, KeyT>::LogDump       ;
+        using Cache<PageT, KeyT>::LogFileOpen       ;
+        using Cache<PageT, KeyT>::LogFileClose       ;
 
         bool Add (KeyT key, PageT (*slow_get_page) (KeyT));
     };

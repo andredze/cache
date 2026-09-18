@@ -6,8 +6,8 @@
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-PageT slow_get_string_page (KeyT key)
+template <typename KeyT>
+std::string slow_get_string_page (KeyT key)
 {
 	for (std::size_t i = 0; i < 10000000; i++) {
 		int tmp = 0;
@@ -20,7 +20,7 @@ PageT slow_get_string_page (KeyT key)
 
 int Test1LruCache ()
 {
-	std::string kTest1FileName = "tests/test.txt";
+	std::string kTest1FileName = "tests/test1.txt";
 
 	std::ifstream test_data_file (kTest1FileName);
 
@@ -51,6 +51,8 @@ int Test1LruCache ()
 
 	LRUCache<std::string, int> lru_cache (cache_size);
 
+	lru_cache.LogFileOpen (kLogFileName);
+
 	//==================================================
 
 	int hits_count = 0;
@@ -68,12 +70,14 @@ int Test1LruCache ()
 			hits_count++;
 		}
 
-		lru_cache.Dump (kTest1FileName);
+		lru_cache.LogDump ();
 	}
 
 	//==================================================
 	
 	std::cout << "hit_count = " << hits_count << std::endl;
+
+	lru_cache.LogFileClose ();
 
 	return 0;
 }

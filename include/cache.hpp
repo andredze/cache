@@ -9,12 +9,26 @@
 #include <string>
 #include <iterator>
 #include <fstream>
+#include "error_handle.hpp"
+
+//--------------------------------------------------------------------------------
+
+enum class CacheErr_t : std::uint8_t {
+	kSuccess     = 0,
+	kOpenFileErr = 1,
+};
+
+//--------------------------------------------------------------------------------
+
+std::string kLogFileName = "dump.log";
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
 class Cache {
 	std::size_t capacity_;
+
+	std::ofstream log_file_;
 
 protected:
 	//TODO: we need an exception if we have size = 0
@@ -39,14 +53,9 @@ public:
 	bool IsFull  ();
 	bool IsEmpty ();
 
-	void Dump (std::string file_name);
-};
-
-//--------------------------------------------------------------------------------
-
-enum class CacheErr_t : std::uint8_t {
-	kSuccess     = 0,
-	kOpenFileErr = 1,
+	CacheErr_t LogFileOpen (std::string log_file_name);
+	CacheErr_t LogDump ();
+	void       LogFileClose ();
 };
 
 //--------------------------------------------------------------------------------
@@ -101,22 +110,57 @@ bool Cache<PageT, KeyT>::IsEmpty ()
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-void Cache<PageT, KeyT>::Dump (std::string file_name)
+CacheErr_t Cache<PageT, KeyT>::LogFileOpen (std::string log_file_name)
 {
-    std::ofstream file;
-    file.open (file_name);
+    log_file_.open (log_file_name);
     
-    if (!file.is_open ()) {
-        return;
+    if (!log_file_.is_open ()) {
+		PrintError ("Failed to open log file");
+        return CacheErr_t::kOpenFileErr;
     }
 
-    std::size_t i = 0;
-    for (auto it = cache_.begin (); it != cache_.end (); it++, i++) {
-        file << "elem " << i << " = " << *it << "\n";
-    }
+	return CacheErr_t::kSuccess;
 }
 
 //--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+CacheErr_t Cache<PageT, KeyT>::LogDump ()
+{
+    if (!log_file_.is_open ()) {
+		PrintError ("Can not dump in log file, open it first");
+        return CacheErr_t::kOpenFileErr;
+    }
+
+    std::size_t i = 0;
+
+	log_file_ << "-----------------------------------------" << std::endl;
+	log_file_ << "Dumping cache list:" << std::endl;
+	log_file_ << "cache_.size = " << cache_.size () << std::endl;
+
+    for (auto it = cache_.begin (); it != cache_.end (); it++, i++) {
+        log_file_ << "[" << i << "] = " << *it << std::endl;
+    }
+
+	log_file_ << "-----------------------------------------" << std::endl;
+
+	return CacheErr_t::kSuccess;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+void Cache<PageT, KeyT>::LogFileClose ()
+{
+    if (!log_file_.is_open ()) {
+        return;
+    }
+
+    log_file_.close ();
+}
+
+//--------------------------------------------------------------------------------
+
 
 template <typename PageT, typename KeyT>
 void Cache<PageT, KeyT>::Clear ()
