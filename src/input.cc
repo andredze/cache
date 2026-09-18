@@ -5,12 +5,12 @@
 
 //————————————————————————————————————————————————————————————————————————————————
 
-InputErr_t ReadNumSequence (NumSequence_t &num_sequence, std::istream input_stream)
+InputErr_t NumSequence::Read (std::istream& input_stream)
 {
     unsigned int cur_number = 0;
 
     while (input_stream >> cur_number) {
-        num_sequence.push (cur_number);
+        queue_.push (cur_number);
     }
 
     if (input_stream.eof ()) {
@@ -32,17 +32,42 @@ InputErr_t ReadNumSequence (NumSequence_t &num_sequence, std::istream input_stre
 
 //————————————————————————————————————————————————————————————————————————————————
 
-int GetNextKey (NumSequence_t &num_sequence)
+int NumSequence::GetNextNum ()
 {
-    if (num_sequence.size () == 0) {
+    if (queue_.size () == 0) {
         return -1;
     }
 
-    std::size_t next_num = num_sequence.front ();
+    std::size_t next_num = queue_.front ();
 
-    num_sequence.pop ();
+    queue_.pop ();
 
     return next_num;
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+std::size_t NumSequence::GetSize ()
+{
+    return queue_.size ();
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+void NumSequence::Print ()
+{
+    std::size_t seq_size = GetSize ();
+
+    std::queue<std::size_t> copy = queue_;
+
+    std::cout << "Printing num sequence:" << std::endl;
+
+    for (std::size_t i = 0; i < seq_size; i++) {
+        std::cout << copy.front () << " ";
+        copy.pop (); // removes first element
+    }
+
+    std::cout << std::endl;
 }
 
 //————————————————————————————————————————————————————————————————————————————————

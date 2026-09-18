@@ -78,7 +78,8 @@ bool Cache<PageT, KeyT>::ContainsKey (KeyT key)
 template <typename PageT, typename KeyT>
 KeyT Cache<PageT, KeyT>::GenerateKey (PageT page)
 {
-    return (KeyT) page;
+	// FIXME:
+    return (KeyT) 1;
 }
 
 //--------------------------------------------------------------------------------

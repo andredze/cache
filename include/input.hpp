@@ -5,10 +5,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <queue>
-
-//--------------------------------------------------------------------------------
-
-using NumSequence_t = std::queue<std::size_t>;
+#include <istream>
 
 //--------------------------------------------------------------------------------
 
@@ -20,8 +17,17 @@ enum class InputErr_t : std::uint8_t {
 
 //--------------------------------------------------------------------------------
 
-InputErr_t ReadNumSequence (NumSequence_t &num_sequence, std::istream input_stream);
+class NumSequence {
+    std::queue<std::size_t> queue_;
 
-int GetNextKey (NumSequence_t &num_sequence);
+public:
+    InputErr_t Read (std::istream& input_stream);
+
+    int GetNextNum ();
+
+    std::size_t GetSize ();
+
+    void Print ();
+};
 
 //--------------------------------------------------------------------------------
