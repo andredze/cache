@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <list>
 #include <unordered_map>
-#include <deque>
 #include <string>
 #include <iterator>
 #include <fstream>
