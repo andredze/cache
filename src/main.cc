@@ -1,22 +1,88 @@
 #include <cstdlib>
+#include <iostream>
 #include "lru.hpp"
+#include "input.hpp"
 #include "error_handle.hpp"
 
+//————————————————————————————————————————————————————————————————————————————————
+
 template <typename PageT, typename KeyT>
-PageT slow_get_page (KeyT key)
+PageT slow_get_string_page (KeyT key)
 {
 	for (std::size_t i = 0; i < 10000000; i++) {
 		int tmp = 0;
 	}
 
-	return (PageT) key;
+	return "teee";
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+int Test1LruCache ()
+{
+	std::string kTest1FileName = "tests/test.txt";
+
+	std::ifstream test_data_file (kTest1FileName);
+
+	if (!test_data_file.is_open()) {
+		PrintError ("Failed opening test file");
+        return 1;
+    }
+
+	//==================================================
+
+	NumSequence num_seq;
+
+	num_seq.Read (test_data_file);
+
+	num_seq.Print ();
+	
+	int cache_size = num_seq.GetNextNum ();
+
+	if (cache_size == -1) {
+		return 1;
+	}
+	
+	int data_size = num_seq.GetNextNum ();
+
+	if (data_size == -1) {
+		return 1;
+	}
+
+	LRUCache<std::string, int> lru_cache (cache_size);
+
+	//==================================================
+
+	int hits_count = 0;
+
+	for (int i = 0; i < data_size; i++) {
+		int cur_key = num_seq.GetNextNum ();
+
+		if (cur_key == -1) {
+			return 1;
+		}
+
+		bool hit = lru_cache.Add (cur_key, slow_get_string_page);
+
+		if (hit) {
+			hits_count++;
+		}
+
+		lru_cache.Dump (kTest1FileName);
+	}
+
+	//==================================================
+	
+	std::cout << "hit_count = " << hits_count << std::endl;
+
+	return 0;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
 int main ()
 {
-	LRUCache<int, int> lru_cache (3);
+	Test1LruCache ();
 
 	return EXIT_FAILURE;
 }
