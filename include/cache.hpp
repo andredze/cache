@@ -26,15 +26,20 @@ std::string kLogFileName = "dump.log";
 
 template <typename PageT, typename KeyT>
 class Cache {
+	struct Node {
+		PageT page;
+		KeyT  key;
+	};
+
 	std::size_t capacity_;
 
 	std::ofstream log_file_;
 
 protected:
 	//TODO: we need an exception if we have size = 0
-	std::list<PageT> cache_;
+	std::list<Node> cache_;
 	
-	using ListIt = typename std::list<PageT>::iterator;
+	using ListIt = typename std::list<Node>::iterator;
 	std::unordered_map<KeyT, ListIt> hash_map_;
 
 public:
@@ -45,12 +50,9 @@ public:
 	size_t Size     ();
 	size_t Capacity ();
 
-	bool ContainsKey (KeyT  key );
-	KeyT GenerateKey (PageT page);
-
+	bool ContainsKey (KeyT key);
 	void Clear ();
-
-	bool IsFull  ();
+	bool IsFull ();
 	bool IsEmpty ();
 
 	CacheErr_t LogFileOpen (std::string log_file_name);
@@ -85,15 +87,6 @@ bool Cache<PageT, KeyT>::ContainsKey (KeyT key)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-KeyT Cache<PageT, KeyT>::GenerateKey (PageT page)
-{
-	// FIXME:
-    return (KeyT) 1;
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
 bool Cache<PageT, KeyT>::IsFull ()
 {
     return (cache_.size () == capacity_) ? true : false;
@@ -104,7 +97,7 @@ bool Cache<PageT, KeyT>::IsFull ()
 template <typename PageT, typename KeyT>
 bool Cache<PageT, KeyT>::IsEmpty ()
 {
-    return (cache_.size () == 0) ? true : false;
+    return (cache_.size () == 0);
 }
 
 //--------------------------------------------------------------------------------
@@ -139,10 +132,8 @@ CacheErr_t Cache<PageT, KeyT>::LogDump ()
 	log_file_ << "cache_.size = " << cache_.size () << std::endl;
 
     for (auto it = cache_.begin (); it != cache_.end (); it++, i++) {
-        log_file_ << "[" << i << "] = " << *it << std::endl;
+        log_file_ << i << "[" << it->key << "] = " << it->page << std::endl;
     }
-
-	log_file_ << "-----------------------------------------" << std::endl;
 
 	return CacheErr_t::kSuccess;
 }
@@ -166,14 +157,14 @@ template <typename PageT, typename KeyT>
 void Cache<PageT, KeyT>::Clear ()
 {
     while (cache_.size ()) {
-		auto victim_key = cache_.back ();
+		auto victim_key = cache_.back ().key;
 
-        hash_map_.erase (GenerateKey (victim_key));
+        hash_map_.erase (victim_key);
             
         cache_.pop_back ();
 	}
 
-	return ;
+	return;
 }
 
 //--------------------------------------------------------------------------------
