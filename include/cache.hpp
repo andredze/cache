@@ -20,7 +20,7 @@ enum class CacheErr_t : std::uint8_t {
 
 //--------------------------------------------------------------------------------
 
-std::string kLogFileName = "dump.log";
+const std::string kLogFileName = "dump.log";
 
 //--------------------------------------------------------------------------------
 
@@ -132,7 +132,7 @@ CacheErr_t Cache<PageT, KeyT>::LogDump ()
 	log_file_ << "cache_.size = " << cache_.size () << std::endl;
 
     for (auto it = cache_.begin (); it != cache_.end (); it++, i++) {
-        log_file_ << i << "[" << it->key << "] = " << it->page << std::endl;
+        log_file_ << i << ": [" << it->key << "] = " << it->page << std::endl;
     }
 
 	return CacheErr_t::kSuccess;
