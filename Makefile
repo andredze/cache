@@ -64,7 +64,12 @@ $(DEPS) : $(BUILD_DIR)/%.d : %.cc
 clean:
 	rm -rf $(CXXOBJ) $(DEPS) $(BUILD_DIR)/$(EXECUTABLE) $(BUILD_DIR)/*.log
 
-NODEPS = clean
+.PHONY: run
+run: $(BUILD_DIR)/$(EXECUTABLE)
+	@echo "Running executable\n----------------------------------------------------"
+	@./$<
+
+NODEPS = clean run
 
 ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
 include $(DEPS)

@@ -9,9 +9,11 @@
 
 int main ()
 {
-	Test1LruCache ();
+	if (Test1LruCache ()) {
+		return EXIT_FAILURE;
+	}
 
-	return EXIT_FAILURE;
+	return EXIT_SUCCESS;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
