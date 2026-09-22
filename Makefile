@@ -60,6 +60,12 @@ $(DEPS) : $(BUILD_DIR)/%.d : %.cc
 	@mkdir -p $(@D)
 	$(CXX) -E $(CXXFLAGS) $< -MM -MT $(@:.d=.o) > $@
 
+# .PHONY: diagnose $(CXXSRC:%=%.iwyu)
+# diagnose: $(CXXSRC:%=%.iwyu)
+
+# %.cc.iwyu: %.cc
+# 	iwyu $(CXXFLAGS) $<
+
 .PHONY: clean
 clean:
 	rm -rf $(CXXOBJ) $(DEPS) $(BUILD_DIR)/$(EXECUTABLE) $(BUILD_DIR)/*.log
@@ -69,7 +75,7 @@ run: $(BUILD_DIR)/$(EXECUTABLE)
 	@echo "Running executable\n----------------------------------------------------"
 	@./$<
 
-NODEPS = clean run
+NODEPS = clean run diagnose
 
 ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
 include $(DEPS)
