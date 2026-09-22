@@ -8,7 +8,7 @@ SRC_DIR     = src
 INCLUDE_DIR = include
 EXECUTABLE  = cache.x
 
-CXXFLAGS_RELEASE  = -std=c++20 -DNDEBUG -O3 -march=native -pie -fPIE
+CXXFLAGS_RELEASE  = -std=c++20 -DNDEBUG -O3 -march=native -pie -fPIE -flto
 
 CXXFLAGS_SANITIZE = -fstack-protector -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr 
 
