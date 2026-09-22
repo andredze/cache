@@ -1,5 +1,6 @@
 # make VERSION=Release
 # make -j8 
+# ./build/cache.x
 
 # ?= -> can redefine variable
 BUILD_DIR   ?= build
