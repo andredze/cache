@@ -3,7 +3,6 @@
 # ./build/cache.x
 
 # ?= -> can redefine variable
-BUILD_DIR   ?= build
 SRC_DIR     = src
 INCLUDE_DIR = include
 EXECUTABLE  = cache.x
@@ -31,8 +30,10 @@ CXXFLAGS_WARNINGS = -Wall -Wextra -Weffc++ -Wsign-conversion -Waggressive-loop-o
 
 ifeq "$(VERSION)" "Release" 
 	override CXXFLAGS += -I $(INCLUDE_DIR) $(CXXFLAGS_RELEASE)
+	BUILD_DIR ?= build
 else
 	override CXXFLAGS += -I $(INCLUDE_DIR) $(CXXFLAGS_DEBUG) $(CXXFLAGS_SANITIZE)
+	BUILD_DIR ?= debug_build
 endif
 
 ifeq ($(origin CXX),default)
