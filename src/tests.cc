@@ -11,7 +11,7 @@ static std::string slow_get_string_page (KeyT key)
 {
 	volatile int tmp = 0;
 
-	for (std::size_t i = 0; i < 10000000; i++) {
+	for (std::size_t i = 0; i < 10'000'000; i++) {
 		tmp = tmp + 1;
 	}
 
