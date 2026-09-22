@@ -10,6 +10,10 @@ make run
 ```
 make -j8
 ```
+## Get `iwyu` diagnostics about include dependencies
+```
+make diagnose
+`````
 ## Run
 ```
 ./build/cache.x

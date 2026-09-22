@@ -1,5 +1,9 @@
 #include <iostream>
+#include <string>
+#include <cstddef>
+#include <fstream>
 #include "tests.hpp"
+#include "cache.hpp"
 #include "input.hpp"
 #include "error_handle.hpp"
 #include "lru.hpp"

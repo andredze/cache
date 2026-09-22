@@ -60,11 +60,16 @@ $(DEPS) : $(BUILD_DIR)/%.d : %.cc
 	@mkdir -p $(@D)
 	$(CXX) -E $(CXXFLAGS) $< -MM -MT $(@:.d=.o) > $@
 
-# .PHONY: diagnose $(CXXSRC:%=%.iwyu)
-# diagnose: $(CXXSRC:%=%.iwyu)
+IWYU = iwyu
+IWYU_OUTPUTS = $(CXXOBJ:.o=.iwyu)
 
-# %.cc.iwyu: %.cc
-# 	iwyu $(CXXFLAGS) $<
+.PHONY: diagnose
+diagnose: $(IWYU_OUTPUTS)
+
+$(IWYU_OUTPUTS) : $(BUILD_DIR)/%.iwyu : %.cc
+	@mkdir -p $(@D)
+	$(IWYU) $(CXXFLAGS) $<
+	@echo "========================================================================="
 
 .PHONY: clean
 clean:
