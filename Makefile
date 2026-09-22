@@ -79,7 +79,7 @@ clean:
 .PHONY: run
 run: $(BUILD_DIR)/$(EXECUTABLE)
 	@echo "Running executable\n----------------------------------------------------"
-	@./$<
+	./$<
 
 NODEPS = clean run diagnose
 
