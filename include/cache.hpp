@@ -36,7 +36,6 @@ class Cache {
 	std::ofstream log_file_;
 
 protected:
-	//TODO: we need an exception if we have size = 0
 	std::list<Node> cache_;
 	
 	using ListIt = typename std::list<Node>::iterator;
@@ -165,6 +164,14 @@ void Cache<PageT, KeyT>::Clear ()
 	}
 
 	return;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename KeyT, typename PageT>
+PageT GetSlowPage (KeyT key)
+{
+	return (PageT) 0;
 }
 
 //--------------------------------------------------------------------------------

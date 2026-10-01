@@ -11,6 +11,8 @@ namespace lfu {
 template <typename PageT, typename KeyT>
 class LFU {
 
+private:
+
 struct Node {
     KeyT   key_;
     size_t freq_;
@@ -19,10 +21,131 @@ struct Node {
     typename std::list<Node*>::iterator it_;
 };
 
-    unordered_map<KeyT  , Node*>  key_map;
-    unordered_map<size_t, std::list<Node*>> freq_map;
+    std::unordered_map<KeyT  , Node*>  key_map_;
+    std::unordered_map<size_t, std::list<Node*>> freq_map_;
 
-    int min_freq;
+    size_t size_    ;
+    size_t capacity_;
+    size_t min_freq_;
+
+private:
+
+    void DeleteLowFreqElem ();
+    void AddByFreq (size_t freq, Node* node);
+
+public:
+
+    LFU (std::size_t input_capacity) : 
+        size_     (0),
+        capacity_ (input_capacity),
+        min_freq_ (0) {
+
+        };
+
+    ~LFU () {
+        for (auto& [key, node] : key_map_) {
+            delete node;
+        }
+    };
+
+    bool Contains (const KeyT& key) const;
+    bool Add      (const KeyT& key);
 };
 
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+void LFU<PageT, KeyT>::DeleteLowFreqElem ()
+{
+    std::list<Node*>& list = freq_map_[min_freq_];
+
+    Node* node = list.front ();
+
+    list.pop_front ();
+    key_map_.erase (node->key_);
+
+    delete (node);
+
+    size_--;
+
+    if (list.empty()) {
+        freq_map_.erase(min_freq_);
+    }
 };
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+void LFU<PageT, KeyT>::AddByFreq (size_t freq, Node* node)
+{
+    std::list<Node*>& list = freq_map_[freq];
+
+    list.push_back (node);
+
+    node->it_ = std::prev(list.end());
+};
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+bool LFU<PageT, KeyT>::Add (const KeyT& key)
+{
+    if (capacity_ == 0) {
+        return false;
+    }
+
+    if (Contains (key) == false) {
+        Node* node = new Node {
+            key,
+            0,
+            GetSlowPage(key)
+        };
+
+        if (size_ == capacity_) {
+            DeleteLowFreqElem ();
+        }
+
+        key_map_[key] = node;
+
+        AddByFreq (0, node);
+        min_freq_ = 0;
+
+        size_++;
+
+        return false;
+    }
+
+    size_t old_freq = node->freq_;
+
+    std::list<Node*>& list = freq_map_[old_freq];
+
+    list.erase(node->it_);
+
+    if (list.empty()) {
+        freq_map_.erase(old_freq);
+
+        if (min_freq_ == old_freq) {
+            min_freq_++;
+        }
+    }
+
+    node->freq_++;
+
+    AddByFreq(node->freq_, node);
+
+    return true;
+};
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+bool LFU<PageT, KeyT>::Contains (const KeyT& key) const
+{
+    return key_map_.contains (key);
+}
+
+//--------------------------------------------------------------------------------
+
+} // namespace lfu
+
+//--------------------------------------------------------------------------------
