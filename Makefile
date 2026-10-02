@@ -86,6 +86,3 @@ NODEPS = clean run diagnose
 ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
 include $(DEPS)
 endif
-
-lfu:
-	g++ src/main.cc src/lfu.cc -I include -o lfu

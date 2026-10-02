@@ -33,8 +33,8 @@ private:
     void DeleteLowFreqElem ();
     void AddByFreq (size_t freq, Node* node);
 
-    bool Add (PageT page, KeyT key);
-    void ChangeKeyToGreaterFreq (KeyT key);
+    bool Add (const PageT& page, const KeyT& key);
+    void MoveNodeToIncreasedFreq (const KeyT& key);
 
 public:
 
@@ -103,17 +103,21 @@ bool LFU<PageT, KeyT>::Contains (const KeyT& key) const
 template <typename PageT, typename KeyT>
 PageT LFU<PageT, KeyT>::GetPage (const KeyT& key)
 {
+    if (capacity_ == 0) {
+        return PageT {};
+    }
+
     if (Contains (key) == false) {
         PageT page = GetSlowPage<PageT,KeyT>(key);
 
-        Add (key, page);
+        Add (page, key);
 
         return page;
     }
 
     PageT page = key_map_[key]->value_;
 
-    ChangeKeyToGreaterFreq (key);
+    MoveNodeToIncreasedFreq (key);
 
     return page;
 }
@@ -121,7 +125,7 @@ PageT LFU<PageT, KeyT>::GetPage (const KeyT& key)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LFU<PageT, KeyT>::Add (PageT page, KeyT key)
+bool LFU<PageT, KeyT>::Add (const PageT& page, const KeyT& key)
 {
     Node* node = nullptr;
 
@@ -131,7 +135,7 @@ bool LFU<PageT, KeyT>::Add (PageT page, KeyT key)
     catch (const std::bad_alloc&) {
         std::cerr << "Allocation error\nCant add to cache\n";
 
-        return false;
+        throw ;
     }
 
     if (size_ == capacity_) {
@@ -151,7 +155,7 @@ bool LFU<PageT, KeyT>::Add (PageT page, KeyT key)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-void LFU<PageT, KeyT>::ChangeKeyToGreaterFreq (KeyT key)
+void LFU<PageT, KeyT>::MoveNodeToIncreasedFreq (const KeyT& key)
 {
     Node* node = key_map_[key];
 
@@ -159,10 +163,10 @@ void LFU<PageT, KeyT>::ChangeKeyToGreaterFreq (KeyT key)
 
     std::list<Node*>& list = freq_map_[old_freq];
 
-    list.erase(node->it_);
+    list.erase (node->it_);
 
-    if (list.empty()) {
-        freq_map_.erase(old_freq);
+    if (list.empty ()) {
+        freq_map_.erase (old_freq);
 
         if (min_freq_ == old_freq) {
             min_freq_++;
@@ -171,7 +175,7 @@ void LFU<PageT, KeyT>::ChangeKeyToGreaterFreq (KeyT key)
 
     node->freq_++;
 
-    AddByFreq(node->freq_, node);
+    AddByFreq (node->freq_, node);
 }
 
 //--------------------------------------------------------------------------------
@@ -179,17 +183,21 @@ void LFU<PageT, KeyT>::ChangeKeyToGreaterFreq (KeyT key)
 template <typename PageT, typename KeyT>
 bool LFU<PageT, KeyT>::Access (const KeyT& key)
 {
+    if (capacity_ == 0) {
+        return false;
+    }
+
     if (Contains (key) == false) {
         PageT page = GetSlowPage<PageT,KeyT>(key);
 
-        Add (key, page);
+        Add (page, key);
 
         return false;
     }
 
     PageT page = key_map_[key]->value_;
 
-    ChangeKeyToGreaterFreq (key);
+    MoveNodeToIncreasedFreq (key);
 
     return true;
 }
