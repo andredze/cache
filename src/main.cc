@@ -1,13 +1,10 @@
-#include <cstdlib>
-#include "tests.hpp"
+#include "lfu.hpp"
 
 //————————————————————————————————————————————————————————————————————————————————
 
 int main ()
 {
-	if (Test1LruCache ()) {
-		return EXIT_FAILURE;
-	}
+	lfu::Test ();
 
 	return EXIT_SUCCESS;
 }

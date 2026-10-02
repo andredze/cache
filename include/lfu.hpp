@@ -33,6 +33,9 @@ private:
     void DeleteLowFreqElem ();
     void AddByFreq (size_t freq, Node* node);
 
+    bool Add (PageT page, KeyT key);
+    void ChangeKeyToGreaterFreq (KeyT key);
+
 public:
 
     LFU (std::size_t input_capacity) : 
@@ -49,7 +52,9 @@ public:
     };
 
     bool Contains (const KeyT& key) const;
-    bool Add      (const KeyT& key);
+    bool Access   (const KeyT& key);
+    
+    PageT GetPage (const KeyT& key);
 };
 
 //--------------------------------------------------------------------------------
@@ -88,32 +93,67 @@ void LFU<PageT, KeyT>::AddByFreq (size_t freq, Node* node)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LFU<PageT, KeyT>::Add (const KeyT& key)
+bool LFU<PageT, KeyT>::Contains (const KeyT& key) const
 {
-    if (capacity_ == 0) {
-        return false;
-    }
+    return key_map_.contains (key);
+}
 
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+PageT LFU<PageT, KeyT>::GetPage (const KeyT& key)
+{
     if (Contains (key) == false) {
-        Node* node = new Node {
-            key,
-            0,
-            GetSlowPage(key)
-        };
+        PageT page = GetSlowPage<PageT,KeyT>(key);
 
-        if (size_ == capacity_) {
-            DeleteLowFreqElem ();
-        }
+        Add (key, page);
 
-        key_map_[key] = node;
+        return page;
+    }
 
-        AddByFreq (0, node);
-        min_freq_ = 0;
+    PageT page = key_map_[key]->value_;
 
-        size_++;
+    ChangeKeyToGreaterFreq (key);
+
+    return page;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+bool LFU<PageT, KeyT>::Add (PageT page, KeyT key)
+{
+    Node* node = nullptr;
+
+    try {
+        node = new Node {key, 0, page};
+    }
+    catch (const std::bad_alloc&) {
+        std::cerr << "Allocation error\nCant add to cache\n";
 
         return false;
     }
+
+    if (size_ == capacity_) {
+        DeleteLowFreqElem ();
+    }
+
+    key_map_[key] = node;
+
+    AddByFreq (0, node);
+    min_freq_ = 0;
+
+    size_++;
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+void LFU<PageT, KeyT>::ChangeKeyToGreaterFreq (KeyT key)
+{
+    Node* node = key_map_[key];
 
     size_t old_freq = node->freq_;
 
@@ -132,19 +172,31 @@ bool LFU<PageT, KeyT>::Add (const KeyT& key)
     node->freq_++;
 
     AddByFreq(node->freq_, node);
-
-    return true;
-};
+}
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LFU<PageT, KeyT>::Contains (const KeyT& key) const
+bool LFU<PageT, KeyT>::Access (const KeyT& key)
 {
-    return key_map_.contains (key);
+    if (Contains (key) == false) {
+        PageT page = GetSlowPage<PageT,KeyT>(key);
+
+        Add (key, page);
+
+        return false;
+    }
+
+    PageT page = key_map_[key]->value_;
+
+    ChangeKeyToGreaterFreq (key);
+
+    return true;
 }
 
 //--------------------------------------------------------------------------------
+
+void Test();
 
 } // namespace lfu
 

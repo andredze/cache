@@ -2,6 +2,7 @@
 
 //--------------------------------------------------------------------------------
 
+#include <iostream>
 #include <cstddef>
 #include <cstdint>
 #include <list>
