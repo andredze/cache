@@ -13,6 +13,8 @@ class LFU {
 
 private:
 
+//==================================================
+
 struct Node {
     KeyT   key_;
     size_t freq_;
@@ -21,6 +23,8 @@ struct Node {
     typename std::list<Node*>::iterator it_;
 };
 
+//==================================================
+
     std::unordered_map<KeyT  , Node*>  key_map_;
     std::unordered_map<size_t, std::list<Node*>> freq_map_;
 
@@ -28,7 +32,7 @@ struct Node {
     size_t capacity_;
     size_t min_freq_;
 
-private:
+//==================================================
 
     void DeleteLowFreqElem ();
     void AddByFreq (size_t freq, Node* node);
@@ -36,14 +40,15 @@ private:
     bool Add (const PageT& page, const KeyT& key);
     void MoveNodeToIncreasedFreq (const KeyT& key);
 
+//==================================================
+
 public:
 
     LFU (std::size_t input_capacity) : 
         size_     (0),
         capacity_ (input_capacity),
-        min_freq_ (0) {
-
-        };
+        min_freq_ (0)
+        {};
 
     ~LFU () {
         for (auto& [key, node] : key_map_) {
@@ -52,7 +57,7 @@ public:
     };
 
     bool Contains (const KeyT& key) const;
-    bool Access   (const KeyT& key);
+    bool Hit      (const KeyT& key);
     
     PageT GetPage (const KeyT& key);
 };
@@ -103,21 +108,9 @@ bool LFU<PageT, KeyT>::Contains (const KeyT& key) const
 template <typename PageT, typename KeyT>
 PageT LFU<PageT, KeyT>::GetPage (const KeyT& key)
 {
-    if (capacity_ == 0) {
-        return PageT {};
-    }
-
-    if (Contains (key) == false) {
-        PageT page = GetSlowPage<PageT,KeyT>(key);
-
-        Add (page, key);
-
-        return page;
-    }
+    Hit (key);
 
     PageT page = key_map_[key]->value_;
-
-    MoveNodeToIncreasedFreq (key);
 
     return page;
 }
@@ -181,7 +174,7 @@ void LFU<PageT, KeyT>::MoveNodeToIncreasedFreq (const KeyT& key)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LFU<PageT, KeyT>::Access (const KeyT& key)
+bool LFU<PageT, KeyT>::Hit (const KeyT& key)
 {
     if (capacity_ == 0) {
         return false;

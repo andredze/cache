@@ -172,7 +172,7 @@ void Cache<PageT, KeyT>::Clear ()
 template <typename KeyT, typename PageT>
 PageT GetSlowPage (KeyT key)
 {
-	return (PageT) 0;
+	return (PageT) key;
 }
 
 //--------------------------------------------------------------------------------

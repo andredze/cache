@@ -1,11 +1,9 @@
-#include "lfu.hpp"
+#include "lirs.hpp"
 
 //————————————————————————————————————————————————————————————————————————————————
 
 int main ()
 {
-	lfu::Test ();
-
 	return EXIT_SUCCESS;
 }
 

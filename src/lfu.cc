@@ -26,7 +26,7 @@ void Test ()
         size_t hits = 0;
 
         for (const int key : keys) {
-            hits += cache.Access(key);
+            hits += cache.Hit(key);
         }
 
         total++;
@@ -57,7 +57,7 @@ void Test ()
         size_t hits = 0;
 
         for (const int key : keys) {
-            hits += cache.Access(key);
+            hits += cache.Hit(key);
         }
 
         total++;
@@ -88,7 +88,7 @@ void Test ()
         size_t hits = 0;
 
         for (const int key : keys) {
-            hits += cache.Access(key);
+            hits += cache.Hit(key);
         }
 
         total++;
