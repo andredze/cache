@@ -10,3 +10,4 @@ use
 compile_commands.json
 build/
 debug_build/
+test_build/
