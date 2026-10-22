@@ -2,35 +2,28 @@
 ### for Vladimirov C++ course
 ### made by Kiselev Andrey & Khasanov Amir
 
-# Build and run debug version
-## Build if needed and run
-### -j8 to run jobs in parallel
+### Build
 ```
-make run -j8
+chmod +x ./build.sh
+./build.sh
 ```
-## Build
-```
-make -j8
-```
-## Get `iwyu` diagnostics about include dependencies
-```
-make diagnose
-`````
-## Run
-```
-./debug_build/cache.x
-```
-# Build and run release version
-## Build if needed and run
-```
-make VERSION=Release run -j8
-```
-## Build
-```
-make VERSION=Release -j8
-```
-
-## Run
+### Run
 ```
 ./build/cache.x
-`````
+```
+
+### Debug build and run
+```
+chmod +x ./debug_build.sh
+./debug_build.sh
+
+./debug_build/cache.x
+```
+
+### Build and run tests
+```
+chmod +x ./tests_build.sh
+./tests_build.sh
+
+./test_build/cache.x
+```
