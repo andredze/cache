@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <list>
 #include <cstddef>
+#include <cassert>
 
 //--------------------------------------------------------------------------------
 
@@ -88,6 +89,8 @@ template <typename KeyT>
 KeyT LinkedMap<KeyT>::PopBack ()
 {
     KeyT key = cache_.back ();
+    cache_.pop_back ();
+
     map_.erase (key);
 
     return key;
@@ -146,16 +149,36 @@ public:
     ~TwoQCache () = default;
 
     std::size_t GetCapacity () const;
-    std::size_t GetSizeThresholdIn () const;
+
+    std::size_t GetSizeThresholdIn  () const;
     std::size_t GetSizeThresholdOut () const;
 
     std::size_t GetSize () const;
 
     bool IsFull () const;
 
-    template <typename FuncT>
-    PageT Access (KeyT key, FuncT slow_get_page);
+    using FuncT = PageT (*) (const KeyT& key);
+
+    bool Hit (const KeyT& key, FuncT slow_get_page);
+
+    PageT GetPage (const KeyT& key, FuncT slow_get_page);
 };
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT>
+std::size_t TwoQCache<PageT, KeyT>::GetSizeThresholdIn () const
+{
+    return size_threshold_in_;
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT>
+std::size_t TwoQCache<PageT, KeyT>::GetSizeThresholdOut () const
+{
+    return size_threshold_out_;
+}
 
 //————————————————————————————————————————————————————————————————————————————————
 
@@ -269,12 +292,12 @@ end
 
 */
 template <typename PageT, typename KeyT>
-template <typename FuncT>
-PageT TwoQCache<PageT, KeyT>::Access (KeyT key, FuncT slow_get_page)
+bool TwoQCache<PageT, KeyT>::Hit (const KeyT& key, FuncT slow_get_page)
 {
     // if key is in the hot_cache
     if (hot_cache_.TryMoveToFront (key)) {
-        return pages_.at(key);
+        assert (pages_.contains(key));
+        return true;
     }
 
     if (out_cache_.Contains (key)) {
@@ -284,12 +307,13 @@ PageT TwoQCache<PageT, KeyT>::Access (KeyT key, FuncT slow_get_page)
         hot_cache_.PushFront (key);
 
         assert (pages_.contains(key));
-        return page;
+        return true;
     }
 
     if (in_cache_.Contains (key)) {
         // do nothing;
-        return pages_.at(key);
+        assert (pages_.contains(key));
+        return true;
     }
 
     PageT page = slow_get_page (key);
@@ -297,7 +321,22 @@ PageT TwoQCache<PageT, KeyT>::Access (KeyT key, FuncT slow_get_page)
 
     in_cache_.PushFront (key);
 
-    return page;
+    assert (pages_.contains(key));
+    return true;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+PageT TwoQCache<PageT, KeyT>::GetPage (const KeyT& key, FuncT slow_get_page)
+{
+    if (capacity_ == 0) {
+        return slow_get_page (key);
+    }
+
+    Hit (key, slow_get_page);
+
+    return pages_.at (key);
 }
 
 //--------------------------------------------------------------------------------
