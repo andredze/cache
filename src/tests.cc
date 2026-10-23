@@ -3,10 +3,10 @@
 #include <cstddef>
 #include <fstream>
 #include "tests.hpp"
-#include "cache.hpp"
 #include "input.hpp"
 #include "error_handle.hpp"
-#include "lru.hpp"
+#include "caches/cache.hpp"
+#include "caches/lru.hpp"
 
 //————————————————————————————————————————————————————————————————————————————————
 

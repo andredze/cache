@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <string>
-#include "2q.hpp"
+#include "caches/2q.hpp"
 
 //————————————————————————————————————————————————————————————————————————————————
 
