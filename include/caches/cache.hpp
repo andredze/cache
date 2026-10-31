@@ -10,7 +10,10 @@
 #include <string>
 #include <iterator>
 #include <fstream>
+#include <stdexcept>
+#include <utility>
 #include "error_handle.hpp"
+#include <algorithm>
 
 //--------------------------------------------------------------------------------
 

@@ -2,12 +2,6 @@
 
 //--------------------------------------------------------------------------------
 
-#include <cstddef>
-#include <iterator>
-#include <list>
-#include <unordered_map>
-#include <utility>
-
 #include "cache.hpp"
 
 //--------------------------------------------------------------------------------
@@ -22,13 +16,13 @@ private:
     //==================================================
 
     struct Node {
-        KeyT key_;
+        KeyT key_   ;
         PageT value_;
 
-        bool is_lir_;
+        bool is_lir_     ;
         bool is_resident_;
-        bool in_s_;
-        bool in_q_;
+        bool in_s_       ;
+        bool in_q_       ;
 
         typename std::list<Node*>::iterator s_it_;
         typename std::list<Node*>::iterator q_it_;
@@ -41,8 +35,8 @@ private:
     std::list<Node*> stack_;
     std::list<Node*> queue_;
 
-    size_t size_;
-    size_t capacity_;
+    size_t size_        ;
+    size_t capacity_    ;
     size_t lir_capacity_;
 
     //==================================================
@@ -60,11 +54,14 @@ private:
 
 public:
 
-    explicit LIRS (std::size_t input_capacity) :
-        size_         (0),
-        capacity_     (input_capacity),
-        lir_capacity_ (input_capacity > 1 ? input_capacity - 1 : 0)
+    LIRS (std::size_t lir_size, std::size_t hir_size) :
+    size_         (0),
+    capacity_     (lir_size + hir_size),
+    lir_capacity_ (lir_size)
     {
+        if (lir_size == 0 || hir_size == 0) {
+            throw std::invalid_argument ("LIR and HIR sizes must be positive");
+        }
     }
 
     ~LIRS ()
@@ -257,11 +254,7 @@ void LIRS<PageT, KeyT>::RestoreNonResidentHIR (const KeyT& key)
 
     //==================================================
 
-    stack_.splice (
-        stack_.end (),
-        stack_,
-        new_lir_node->s_it_
-    );
+    stack_.splice (stack_.end (), stack_, new_lir_node->s_it_);
 
     //==================================================
 
@@ -288,16 +281,8 @@ void LIRS<PageT, KeyT>::AddNewPage (const KeyT& key)
         return;
     }
 
-    Node* node = new Node {
-        key,
-        GetSlowPage<PageT, KeyT> (key),
-        false,
-        true,
-        false,
-        false,
-        {},
-        {}
-    };
+    Node* node = new Node {key, GetSlowPage<PageT, KeyT> (key),
+        false, true, false, false, {}, {}};
 
     //==================================================
 
