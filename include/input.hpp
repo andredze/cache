@@ -30,4 +30,10 @@ public:
     void Print ();
 };
 
+template <typename KeyT, typename PageT>
+PageT GetSlowPage (KeyT key)
+{
+	return (PageT) key;
+}
+
 //--------------------------------------------------------------------------------

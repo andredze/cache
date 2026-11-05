@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <cassert>
 
+#include "input.hpp"
+
 //--------------------------------------------------------------------------------
 
 namespace caches

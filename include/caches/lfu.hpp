@@ -2,11 +2,20 @@
 
 //--------------------------------------------------------------------------------
 
-#include "cache.hpp"
+#include <cstddef>
+#include <iostream>
+#include <iterator>
+#include <list>
+#include <new>
+#include <unordered_map>
+
+#include "input.hpp"
 
 //--------------------------------------------------------------------------------
 
-namespace lfu {
+namespace caches {
+
+//--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
 class LFU {
@@ -199,6 +208,6 @@ bool LFU<PageT, KeyT>::Hit (const KeyT& key)
 
 void Test();
 
-} // namespace lfu
+} // namespace caches
 
 //--------------------------------------------------------------------------------

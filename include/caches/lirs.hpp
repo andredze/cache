@@ -2,11 +2,18 @@
 
 //--------------------------------------------------------------------------------
 
-#include "cache.hpp"
+#include <cstddef>
+#include <iterator>
+#include <list>
+#include <stdexcept>
+#include <unordered_map>
+#include <utility>
+
+#include "input.hpp"
 
 //--------------------------------------------------------------------------------
 
-namespace lirs {
+namespace caches {
 
 template <typename PageT, typename KeyT>
 class LIRS {
@@ -343,6 +350,6 @@ void LIRS<PageT, KeyT>::PruneStack ()
 
 //--------------------------------------------------------------------------------
 
-} // namespace lirs
+} // namespace caches
 
 //--------------------------------------------------------------------------------

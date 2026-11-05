@@ -2,11 +2,19 @@
 
 //--------------------------------------------------------------------------------
 
-#include "cache.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <list>
+#include <stdexcept>
+#include <unordered_map>
+#include <utility>
+
+#include "input.hpp"
 
 //--------------------------------------------------------------------------------
 
-namespace arc {
+namespace caches {
 
 //--------------------------------------------------------------------------------
 
@@ -226,10 +234,7 @@ void ARC<PageT, KeyT>::AddNewPage (const KeyT& key)
 
     recent_.push_front (key);
 
-    Node* node = new Node {
-        ListType::Recent,
-        recent_.begin ()
-    };
+    Node* node = new Node {ListType::Recent, recent_.begin ()};
 
     key_map_.emplace (key, node);
     pages_.emplace (key, std::move (page));
@@ -242,16 +247,9 @@ void ARC<PageT, KeyT>::AddNewPage (const KeyT& key)
 template <typename PageT, typename KeyT>
 void ARC<PageT, KeyT>::RestoreRecentPage (const KeyT& key)
 {
-    size_t delta = std::max<size_t> (
-        1,
-        frequent_history_.size () /
-        recent_history_.size ()
-    );
+    size_t delta = std::max<size_t> (1, frequent_history_.size () / recent_history_.size ());
 
-    recent_target_ = std::min (
-        capacity_,
-        recent_target_ + delta
-    );
+    recent_target_ = std::min (capacity_, recent_target_ + delta);
 
     PageT page = GetSlowPage<PageT, KeyT> (key);
 
@@ -259,11 +257,7 @@ void ARC<PageT, KeyT>::RestoreRecentPage (const KeyT& key)
 
     Node* node = key_map_.at (key);
 
-    frequent_.splice (
-        frequent_.begin (),
-        recent_history_,
-        node->it_
-    );
+    frequent_.splice (frequent_.begin (), recent_history_, node->it_);
 
     node->type_ = ListType::Frequent;
     node->it_   = frequent_.begin ();
@@ -278,15 +272,9 @@ void ARC<PageT, KeyT>::RestoreRecentPage (const KeyT& key)
 template <typename PageT, typename KeyT>
 void ARC<PageT, KeyT>::RestoreFrequentPage (const KeyT& key)
 {
-    size_t delta = std::max<size_t> (
-        1,
-        recent_history_.size () /
-        frequent_history_.size ()
-    );
+    size_t delta = std::max<size_t> (1, recent_history_.size () / frequent_history_.size ());
 
-    recent_target_ = (delta >= recent_target_)
-                   ? 0
-                   : recent_target_ - delta;
+    recent_target_ = (delta >= recent_target_) ? 0 : recent_target_ - delta;
 
     PageT page = GetSlowPage<PageT, KeyT> (key);
 
@@ -294,11 +282,7 @@ void ARC<PageT, KeyT>::RestoreFrequentPage (const KeyT& key)
 
     Node* node = key_map_.at (key);
 
-    frequent_.splice (
-        frequent_.begin (),
-        frequent_history_,
-        node->it_
-    );
+    frequent_.splice (frequent_.begin (), frequent_history_, node->it_);
 
     node->type_ = ListType::Frequent;
     node->it_   = frequent_.begin ();
@@ -359,4 +343,4 @@ PageT ARC<PageT, KeyT>::GetPage (const KeyT& key)
 
 //--------------------------------------------------------------------------------
 
-} // namespace arc
+} // namespace caches

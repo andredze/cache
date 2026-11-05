@@ -2,180 +2,73 @@
 
 //--------------------------------------------------------------------------------
 
-#include <iostream>
-#include <cstddef>
-#include <cstdint>
-#include <list>
-#include <unordered_map>
-#include <string>
-#include <iterator>
-#include <fstream>
-#include <stdexcept>
-#include <utility>
-#include "error_handle.hpp"
-#include <algorithm>
+#include <variant>
+#include <vector>
 
-//--------------------------------------------------------------------------------
+#include "input.hpp"
 
-enum class CacheErr_t : std::uint8_t {
-	kSuccess     = 0,
-	kOpenFileErr = 1,
-};
-
-//--------------------------------------------------------------------------------
-
-const std::string kLogFileName = "dump.log";
+#include "arc.hpp"
+#include "lru.hpp"
+#include "lfu.hpp"
+#include "lirs.hpp"
+#include "2q.hpp"
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
 class Cache {
-	struct Node {
-		PageT page;
-		KeyT  key;
-	};
 
-	std::size_t capacity_;
+private:
 
-	std::ofstream log_file_;
+    //==================================================
 
-protected:
-	std::list<Node> cache_;
-	
-	using ListIt = typename std::list<Node>::iterator;
-	std::unordered_map<KeyT, ListIt> hash_map_;
+    using Algorithm = std::variant<
+        caches::ARC      <PageT, KeyT>,
+        caches::LRU      <PageT, KeyT>,
+        caches::LFU      <PageT, KeyT>,
+        caches::LIRS     <PageT, KeyT>,
+        caches::TwoQCache<PageT, KeyT>
+    >;
+
+    //==================================================
+
+    std::vector<Algorithm> algorithms_;
+
+    //==================================================
 
 public:
-	Cache(std::size_t input_capacity) : capacity_(input_capacity) {};
-	
-	virtual ~Cache() = default;
 
-	size_t Size     ();
-	size_t Capacity ();
+    //==================================================
 
-	bool ContainsKey (KeyT key);
-	void Clear ();
-	bool IsFull ();
-	bool IsEmpty ();
+    template <typename AlgorithmT, typename... Args>
+    void AddAlgorithm (Args&&... args);
 
-	CacheErr_t LogFileOpen (std::string log_file_name);
-	CacheErr_t LogDump ();
-	void       LogFileClose ();
+    bool Hit (const KeyT& key);
 };
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-size_t Cache<PageT, KeyT>::Size ()
+template <typename AlgorithmT, typename... Args>
+void Cache<PageT, KeyT>::AddAlgorithm (Args&&... args)
 {
-    return cache_.size ();
+    algorithms_.emplace_back (std::in_place_type<AlgorithmT>, std::forward<Args> (args)...);
 }
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-size_t Cache<PageT, KeyT>::Capacity ()
+bool Cache<PageT, KeyT>::Hit (const KeyT& key)
 {
-    return capacity_;
-}
+    for (auto& algorithm : algorithms_) {
+        bool hit = std::visit ([&](auto& cache) { return cache.Hit (key); }, algorithm);
 
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-bool Cache<PageT, KeyT>::ContainsKey (KeyT key)
-{
-    return hash_map_.contains (key);
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-bool Cache<PageT, KeyT>::IsFull ()
-{
-    return (cache_.size () == capacity_) ? true : false;
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-bool Cache<PageT, KeyT>::IsEmpty ()
-{
-    return (cache_.size () == 0);
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-CacheErr_t Cache<PageT, KeyT>::LogFileOpen (std::string log_file_name)
-{
-    log_file_.open (log_file_name);
-    
-    if (!log_file_.is_open ()) {
-		PrintError ("Failed to open log file");
-        return CacheErr_t::kOpenFileErr;
+        if (hit) {
+            return true;
+        }
     }
 
-	return CacheErr_t::kSuccess;
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-CacheErr_t Cache<PageT, KeyT>::LogDump ()
-{
-    if (!log_file_.is_open ()) {
-		PrintError ("Can not dump in log file, open it first");
-        return CacheErr_t::kOpenFileErr;
-    }
-
-    std::size_t i = 0;
-
-	log_file_ << "-----------------------------------------" << std::endl;
-	log_file_ << "Dumping cache list:" << std::endl;
-	log_file_ << "cache_.size = " << cache_.size () << std::endl;
-
-    for (auto it = cache_.begin (); it != cache_.end (); it++, i++) {
-        log_file_ << i << ": [" << it->key << "] = " << it->page << std::endl;
-    }
-
-	return CacheErr_t::kSuccess;
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename PageT, typename KeyT>
-void Cache<PageT, KeyT>::LogFileClose ()
-{
-    if (!log_file_.is_open ()) {
-        return;
-    }
-
-    log_file_.close ();
-}
-
-//--------------------------------------------------------------------------------
-
-
-template <typename PageT, typename KeyT>
-void Cache<PageT, KeyT>::Clear ()
-{
-    while (cache_.size ()) {
-		auto victim_key = cache_.back ().key;
-
-        hash_map_.erase (victim_key);
-            
-        cache_.pop_back ();
-	}
-
-	return;
-}
-
-//--------------------------------------------------------------------------------
-
-template <typename KeyT, typename PageT>
-PageT GetSlowPage (KeyT key)
-{
-	return (PageT) key;
+    return false;
 }
 
 //--------------------------------------------------------------------------------
