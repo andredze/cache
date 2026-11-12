@@ -40,10 +40,19 @@ private:
     void MoveToFront (ListIt iter);
 
 public:
+    LinkedMap  () = default;
+    ~LinkedMap () = default;
+
+    LinkedMap            (const LinkedMap&) = delete;
+    LinkedMap& operator= (const LinkedMap&) = delete;
+
+    LinkedMap            (LinkedMap&&) = default;
+    LinkedMap& operator= (LinkedMap&&) = default;
+
+    bool Contains       (const KeyT& key) const;
     bool TryMoveToFront (const KeyT& key);
     void PushFront      (const KeyT& key);
     KeyT PopBack        ();
-    bool Contains       (const KeyT& key) const;
 
     std::size_t GetSize () const;
 };
@@ -122,7 +131,7 @@ template <
     typename KeyT,
     typename LoaderT = PageT (*)(const KeyT&)
 >
-class TwoQCache {
+class TwoQ {
 private:
     LoaderT slow_get_page_;
 
@@ -139,11 +148,11 @@ private:
     void StorePageInMemory (KeyT key, PageT& page);
 
 public:
-    TwoQCache (
+    TwoQ (
         std::size_t capacity,
         LoaderT loader,
-        double  percentage_in_  = kDefaultPercentageForThresholdIn,
-        double  percentage_out_ = kDefaultPercentageForThresholdOut
+        std::size_t percentage_in_  = kDefaultPercentageForThresholdIn,
+        std::size_t percentage_out_ = kDefaultPercentageForThresholdOut
     ) :
         slow_get_page_(std::move(loader)),
         capacity_          (capacity),
@@ -151,7 +160,13 @@ public:
         size_threshold_out_(capacity * percentage_out_ / 100)
     {}
 
-    ~TwoQCache () = default;
+    ~TwoQ () = default;
+
+    TwoQ            (const TwoQ&) = delete;
+    TwoQ& operator= (const TwoQ&) = delete;
+
+    TwoQ            (TwoQ&&) = default;
+    TwoQ& operator= (TwoQ&&) = default;
 
     std::size_t GetCapacity         () const;
     std::size_t GetSizeThresholdIn  () const;
@@ -160,56 +175,54 @@ public:
 
     bool IsFull () const;
 
-    using FuncT = PageT (*) (const KeyT& key);
-
     bool  Hit     (const KeyT& key);
     PageT GetPage (const KeyT& key);
 };
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-std::size_t TwoQCache<PageT, KeyT>::GetSizeThresholdIn () const
+template <typename PageT, typename KeyT, typename LoaderT>
+std::size_t TwoQ<PageT, KeyT, LoaderT>::GetSizeThresholdIn () const
 {
     return size_threshold_in_;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-std::size_t TwoQCache<PageT, KeyT>::GetSizeThresholdOut () const
+template <typename PageT, typename KeyT, typename LoaderT>
+std::size_t TwoQ<PageT, KeyT, LoaderT>::GetSizeThresholdOut () const
 {
     return size_threshold_out_;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-std::size_t TwoQCache<PageT, KeyT>::GetSize () const
+template <typename PageT, typename KeyT, typename LoaderT>
+std::size_t TwoQ<PageT, KeyT, LoaderT>::GetSize () const
 {
     return pages_.size ();
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-std::size_t TwoQCache<PageT, KeyT>::GetCapacity () const
+template <typename PageT, typename KeyT, typename LoaderT>
+std::size_t TwoQ<PageT, KeyT, LoaderT>::GetCapacity () const
 {
     return capacity_;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-bool TwoQCache<PageT, KeyT>::IsFull () const
+template <typename PageT, typename KeyT, typename LoaderT>
+bool TwoQ<PageT, KeyT, LoaderT>::IsFull () const
 {
     return capacity_ == pages_.size ();
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-template <typename PageT, typename KeyT>
-void TwoQCache<PageT, KeyT>::StorePageInMemory (KeyT key, PageT& page)
+template <typename PageT, typename KeyT, typename LoaderT>
+void TwoQ<PageT, KeyT, LoaderT>::StorePageInMemory (KeyT key, PageT& page)
 {
     if (!IsFull ()) {
         pages_[key] = page;
@@ -244,15 +257,15 @@ void TwoQCache<PageT, KeyT>::StorePageInMemory (KeyT key, PageT& page)
 //————————————————————————————————————————————————————————————————————————————————
 
 template <typename PageT, typename KeyT, typename LoaderT>
-bool TwoQCache<PageT, KeyT>::Hit (const KeyT& key)
+bool TwoQ<PageT, KeyT, LoaderT>::Hit (const KeyT& key)
 {
     if (capacity_ == 0) {
-        return slow_get_page (key);
+        return false;
     }
 
     // if key is in the hot_cache
     if (hot_cache_.TryMoveToFront (key)) {
-        assert (pages_.contains(key));
+        assert (pages_.contains (key));
         return true;
     }
 
@@ -263,13 +276,13 @@ bool TwoQCache<PageT, KeyT>::Hit (const KeyT& key)
 
         hot_cache_.PushFront (key);
 
-        assert (pages_.contains(key));
+        assert (pages_.contains (key));
         return false;
     }
 
     if (in_cache_.Contains (key)) {
         // do nothing;
-        assert (pages_.contains(key));
+        assert (pages_.contains (key));
         return true;
     }
 
@@ -279,15 +292,19 @@ bool TwoQCache<PageT, KeyT>::Hit (const KeyT& key)
 
     in_cache_.PushFront (key);
 
-    assert (pages_.contains(key));
+    assert (pages_.contains (key));
     return false;
 }
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT, typename LoaderT>
-PageT TwoQCache<PageT, KeyT>::GetPage (const KeyT& key)
+PageT TwoQ<PageT, KeyT, LoaderT>::GetPage (const KeyT& key)
 {
+    if (capacity_ == 0) {
+        return slow_get_page_ (key);
+    }
+
     Hit (key);
 
     return pages_.at (key);

@@ -8,7 +8,19 @@
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCacheLinkedMap, canCheckContains)
+namespace caches
+{
+
+std::string IntToStringSlowGetPage (const int& key)
+{
+    return std::to_string (key);
+}
+
+};
+
+//==================================================
+
+TEST (TwoQLinkedMap, canCheckContains)
 {
     caches::LinkedMap<int> linked_map{};
 
@@ -26,7 +38,7 @@ TEST (TwoQCacheLinkedMap, canCheckContains)
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCacheLinkedMap, canGetSize)
+TEST (TwoQLinkedMap, canGetSize)
 {
     caches::LinkedMap<int> linked_map{};
 
@@ -39,7 +51,7 @@ TEST (TwoQCacheLinkedMap, canGetSize)
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCacheLinkedMap, matchingPushFrontAndPopBack)
+TEST (TwoQLinkedMap, matchingPushFrontAndPopBack)
 {
     caches::LinkedMap<int> linked_map{};
 
@@ -47,20 +59,20 @@ TEST (TwoQCacheLinkedMap, matchingPushFrontAndPopBack)
     linked_map.PushFront (7);
     linked_map.PushFront (9);
 
-    EXPECT_EQ   (linked_map.PopBack (), 5);
-    EXPECT_EQ   (linked_map.PopBack (), 7);
+    EXPECT_EQ (linked_map.PopBack (), 5);
+    EXPECT_EQ (linked_map.PopBack (), 7);
 
     linked_map.PushFront (11);
 
-    EXPECT_EQ   (linked_map.PopBack (), 9);
-    EXPECT_EQ   (linked_map.PopBack (), 11);
+    EXPECT_EQ (linked_map.PopBack (), 9);
+    EXPECT_EQ (linked_map.PopBack (), 11);
 
-    EXPECT_EQ   (linked_map.GetSize (), 0);
+    EXPECT_EQ (linked_map.GetSize (), 0);
 }
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCacheLinkedMap, doesMoveToFrontIfContainsKey)
+TEST (TwoQLinkedMap, doesMoveToFrontIfContainsKey)
 {
     caches::LinkedMap<int> linked_map{};
 
@@ -81,7 +93,7 @@ TEST (TwoQCacheLinkedMap, doesMoveToFrontIfContainsKey)
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCacheLinkedMap, doesNotMoveToFrontIfNotContainsKey)
+TEST (TwoQLinkedMap, doesNotMoveToFrontIfNotContainsKey)
 {
     caches::LinkedMap<int> linked_map{};
 
@@ -104,20 +116,21 @@ TEST (TwoQCacheLinkedMap, doesNotMoveToFrontIfNotContainsKey)
 
 //————————————————————————————————————————————————————————————————————————————————
 
-TEST (TwoQCache, canConstructWithRightParameters)
+TEST (TwoQ, canConstructWithRightParameters)
 {
     constexpr int kCapacity = 100;
 
-    constexpr double kPercentageSizeThresholdIn  = 27.0f;
-    constexpr double kPercentageSizeThresholdOut = 53.0f;
+    constexpr std::size_t kPercentageIn  = 27;
+    constexpr std::size_t kPercentageOut = 53;
 
-    constexpr int kSizeThresholdIn  = kCapacity * kPercentageSizeThresholdIn  / 100;
-    constexpr int kSizeThresholdOut = kCapacity * kPercentageSizeThresholdOut / 100;
+    constexpr int kSizeThresholdIn  = kCapacity * kPercentageIn  / 100;
+    constexpr int kSizeThresholdOut = kCapacity * kPercentageOut / 100;
 
-    caches::TwoQCache<std::string, int> cache {
+    caches::TwoQ<std::string, int> cache {
         kCapacity,
-        kPercentageSizeThresholdIn,
-        kPercentageSizeThresholdOut
+        caches::IntToStringSlowGetPage,
+        kPercentageIn,
+        kPercentageOut
     };
 
     EXPECT_EQ (cache.GetCapacity (), kCapacity);
@@ -128,101 +141,63 @@ TEST (TwoQCache, canConstructWithRightParameters)
 
 //————————————————————————————————————————————————————————————————————————————————
 
-namespace caches
-{
-
-std::string IntToStringSlowGetPage (const int& key)
-{
-    return std::to_string (key);
-}
-
-};
-
-//==================================================
-
-TEST (TwoQCache, canGetPage)
+TEST (TwoQ, canGetPage)
 {
     constexpr int kCapacity = 100;
 
-    caches::TwoQCache<std::string, int> cache{kCapacity};
+    caches::TwoQ<std::string, int> cache {kCapacity, caches::IntToStringSlowGetPage};
 
     EXPECT_EQ (cache.GetCapacity (), kCapacity);
-
     EXPECT_EQ (cache.GetSize (), 0);
 
-    EXPECT_EQ (
-        cache.GetPage (10, caches::IntToStringSlowGetPage), 
-        caches::IntToStringSlowGetPage(10)
-    );
+    EXPECT_EQ (cache.GetPage (10), caches::IntToStringSlowGetPage(10));
 }
 
 //--------------------------------------------------------------------------------
 
-TEST (TwoQCache, canGetSize)
+TEST (TwoQ, canGetSize)
 {
     constexpr int kCapacity = 100;
 
-    caches::TwoQCache<std::string, int> cache{kCapacity};
+    caches::TwoQ<std::string, int> cache {kCapacity, caches::IntToStringSlowGetPage};
 
     EXPECT_EQ (cache.GetCapacity (), kCapacity);
-
     EXPECT_EQ (cache.GetSize (), 0);
-
-    ASSERT_EQ (
-        cache.GetPage (10, caches::IntToStringSlowGetPage), 
-        caches::IntToStringSlowGetPage(10)
-    );
-
+    ASSERT_EQ (cache.GetPage (10), caches::IntToStringSlowGetPage (10));
     EXPECT_EQ (cache.GetSize (), 1);
-
-    ASSERT_EQ (
-        cache.GetPage (10, caches::IntToStringSlowGetPage), 
-        caches::IntToStringSlowGetPage(10)
-    );
-
+    ASSERT_EQ (cache.GetPage (10), caches::IntToStringSlowGetPage (10));
     EXPECT_EQ (cache.GetSize (), 1);
-
-    ASSERT_EQ (
-        cache.GetPage (12, caches::IntToStringSlowGetPage), 
-        caches::IntToStringSlowGetPage(12)
-    );
-
+    ASSERT_EQ (cache.GetPage (12), caches::IntToStringSlowGetPage (12));
     EXPECT_EQ (cache.GetSize (), 2);
 }
 
 //--------------------------------------------------------------------------------
 
-TEST (TwoQCache, HitForElementInCache)
+TEST (TwoQ, HitForElementInCache)
 {
     constexpr int kCapacity = 100;
 
-    caches::TwoQCache<std::string, int> cache{kCapacity};
+    caches::TwoQ<std::string, int> cache {kCapacity, caches::IntToStringSlowGetPage};
 
     EXPECT_EQ (cache.GetCapacity (), kCapacity);
-
     EXPECT_EQ (cache.GetSize (), 0);
+    ASSERT_EQ (cache.GetPage (10), caches::IntToStringSlowGetPage (10));
 
-    ASSERT_EQ (
-        cache.GetPage (10, caches::IntToStringSlowGetPage), 
-        caches::IntToStringSlowGetPage (10)
-    );
-
-    EXPECT_TRUE (cache.Hit (10, caches::IntToStringSlowGetPage));
+    EXPECT_TRUE (cache.Hit (10));
 }
 
 //--------------------------------------------------------------------------------
 
-TEST (TwoQCache, HitForElementNotInCache)
+TEST (TwoQ, HitForElementNotInCache)
 {
     constexpr int kCapacity = 100;
 
-    caches::TwoQCache<std::string, int> cache{kCapacity};
+    caches::TwoQ<std::string, int> cache {kCapacity, caches::IntToStringSlowGetPage};
 
     EXPECT_EQ (cache.GetCapacity (), kCapacity);
-
     EXPECT_EQ (cache.GetSize (), 0);
 
-    EXPECT_TRUE (cache.Hit (10, caches::IntToStringSlowGetPage));
+    EXPECT_FALSE (cache.Hit (10));
 }
 
 //————————————————————————————————————————————————————————————————————————————————

@@ -21,7 +21,7 @@ InputErr_t NumSequence::Read (std::istream& input_stream)
         PrintError ("Wrong input format, expected sequence of non-negative numbers");
         return InputErr_t::WrongFormat;
     }
- 
+
     if (input_stream.bad ()) {
         PrintError ("Read error occurred");
         return InputErr_t::ReadError;
@@ -42,7 +42,7 @@ int NumSequence::GetNextNum ()
 
     queue_.pop ();
 
-    return next_num;
+    return static_cast<int> (next_num);
 }
 
 //————————————————————————————————————————————————————————————————————————————————

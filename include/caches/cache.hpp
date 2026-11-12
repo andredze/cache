@@ -23,11 +23,11 @@ private:
     //==================================================
 
     using Algorithm = std::variant<
-        caches::ARC      <PageT, KeyT>,
-        caches::LRU      <PageT, KeyT>,
-        caches::LFU      <PageT, KeyT>,
-        caches::LIRS     <PageT, KeyT>,
-        caches::TwoQCache<PageT, KeyT>
+        caches::ARC <PageT, KeyT>,
+        caches::LRU <PageT, KeyT>,
+        caches::LFU <PageT, KeyT>,
+        caches::LIRS<PageT, KeyT>,
+        caches::TwoQ<PageT, KeyT>
     >;
 
     //==================================================

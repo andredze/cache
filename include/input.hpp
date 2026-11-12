@@ -21,6 +21,8 @@ class NumSequence {
     std::queue<std::size_t> queue_;
 
 public:
+    NumSequence () = default;
+
     InputErr_t Read (std::istream& input_stream);
 
     int GetNextNum ();

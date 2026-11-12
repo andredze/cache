@@ -53,7 +53,7 @@ struct Node {
 
 public:
 
-    LFU (std::size_t input_capacity) : 
+    LFU (std::size_t input_capacity) :
         size_     (0),
         capacity_ (input_capacity),
         min_freq_ (0)
@@ -67,7 +67,7 @@ public:
 
     bool Contains (const KeyT& key) const;
     bool Hit      (const KeyT& key);
-    
+
     PageT GetPage (const KeyT& key);
 };
 
