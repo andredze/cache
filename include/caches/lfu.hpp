@@ -22,6 +22,8 @@ class LFU {
 
 private:
 
+    using Victim = std::pair<KeyT, PageT>;
+
 //==================================================
 
 struct Node {
@@ -43,10 +45,10 @@ struct Node {
 
 //==================================================
 
-    void DeleteLowFreqElem ();
+    std::optional<Victim> DeleteLowFreqElem ();
     void AddByFreq (size_t freq, Node* node);
 
-    bool Add (const PageT& page, const KeyT& key);
+    std::optional<Victim> Add (const PageT& page, const KeyT& key);
     void MoveNodeToIncreasedFreq (const KeyT& key);
 
 //==================================================
@@ -69,12 +71,18 @@ public:
     bool Hit      (const KeyT& key);
 
     PageT GetPage (const KeyT& key);
+
+    std::optional<Victim> Insert (const KeyT& key);
+    std::optional<Victim> Insert (const KeyT& key, PageT page);
+
+    std::optional<PageT> Extract(const KeyT& key);
 };
 
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-void LFU<PageT, KeyT>::DeleteLowFreqElem ()
+std::optional<typename LFU<PageT, KeyT>::Victim>
+LFU<PageT, KeyT>::DeleteLowFreqElem ()
 {
     std::list<Node*>& list = freq_map_[min_freq_];
 
@@ -83,6 +91,8 @@ void LFU<PageT, KeyT>::DeleteLowFreqElem ()
     list.pop_front ();
     key_map_.erase (node->key_);
 
+    Victim victim_node {node->key_, std::move (node->value_)};
+
     delete (node);
 
     size_--;
@@ -90,6 +100,8 @@ void LFU<PageT, KeyT>::DeleteLowFreqElem ()
     if (list.empty()) {
         freq_map_.erase(min_freq_);
     }
+
+    return victim_node;
 };
 
 //--------------------------------------------------------------------------------
@@ -127,7 +139,8 @@ PageT LFU<PageT, KeyT>::GetPage (const KeyT& key)
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LFU<PageT, KeyT>::Add (const PageT& page, const KeyT& key)
+std::optional<typename LFU<PageT, KeyT>::Victim>
+LFU<PageT, KeyT>::Add (const PageT& page, const KeyT& key)
 {
     Node* node = nullptr;
 
@@ -140,8 +153,10 @@ bool LFU<PageT, KeyT>::Add (const PageT& page, const KeyT& key)
         throw ;
     }
 
+    std::optional<Victim> victim_node = std::nullopt;
+
     if (size_ == capacity_) {
-        DeleteLowFreqElem ();
+        victim_node = DeleteLowFreqElem ();
     }
 
     key_map_[key] = node;
@@ -151,7 +166,7 @@ bool LFU<PageT, KeyT>::Add (const PageT& page, const KeyT& key)
 
     size_++;
 
-    return true;
+    return victim_node;
 }
 
 //--------------------------------------------------------------------------------
@@ -206,7 +221,82 @@ bool LFU<PageT, KeyT>::Hit (const KeyT& key)
 
 //--------------------------------------------------------------------------------
 
-void Test();
+template <typename PageT, typename KeyT>
+std::optional<typename LFU<PageT, KeyT>::Victim>
+LFU<PageT, KeyT>::Insert (const KeyT& key, PageT page)
+{
+    if (capacity_ == 0) {
+        return false;
+    }
+
+    if (Contains (key) == false) {
+        return Add (page, key);
+    }
+
+    PageT page = key_map_[key]->value_;
+
+    MoveNodeToIncreasedFreq (key);
+
+    return nullopt;
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+std::optional<typename LFU<PageT, KeyT>::Victim>
+LFU<PageT, KeyT>::Insert (const KeyT& key)
+{
+    PageT page = GetSlowPage (key);
+
+    return Insert (key, page);
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+std::optional<PageT>
+LFU<PageT, KeyT>::Extract (const KeyT& key)
+{
+    auto it = key_map_.find (key);
+
+    if (it == key_map_.end ()) {
+        return std::nullopt;
+    }
+
+    Node* node = it->second;
+
+    PageT page = std::move (node->value_);
+
+    size_t freq = node->freq_;
+
+    auto freq_it = freq_map_.find (freq);
+
+    freq_it->second.erase (node->it_);
+
+    if (freq_it->second.empty ()) {
+        freq_map_.erase (freq_it);
+    }
+
+    key_map_.erase (it);
+
+    delete node;
+    size_--;
+
+    if (freq_map_.empty ()) {
+        min_freq_ = 0;
+    }
+    else if (freq == min_freq_ && !freq_map_.contains (freq)) {
+        min_freq_ = freq_map_.begin ()->first;
+
+        for (const auto& [f, list] : freq_map_) {
+            if (f < min_freq_) {
+                min_freq_ = f;
+            }
+        }
+    }
+
+    return page;
+}
 
 } // namespace caches
 
