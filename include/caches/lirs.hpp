@@ -3,16 +3,13 @@
 //--------------------------------------------------------------------------------
 
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <list>
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
-
-#include "input.hpp"
-
-//--------------------------------------------------------------------------------
 
 namespace caches {
 
@@ -53,6 +50,8 @@ private:
     size_t capacity_;
     size_t lir_capacity_;
 
+    std::function<PageT (const KeyT&)> get_slow_page_;
+
     //==================================================
 
     void UpdateLIRPage   (const KeyT& key);
@@ -71,10 +70,15 @@ private:
 
 public:
 
-    LIRS (std::size_t lir_size, std::size_t hir_size) :
+    LIRS (
+        std::size_t lir_size,
+        std::size_t hir_size,
+        std::function<PageT (const KeyT&)> get_slow_page
+    ) :
         size_         (0),
         capacity_     (lir_size + hir_size),
-        lir_capacity_ (lir_size)
+        lir_capacity_ (lir_size),
+        get_slow_page_ (std::move (get_slow_page))
     {
         if (lir_size == 0 || hir_size == 0) {
             throw std::invalid_argument ("LIR and HIR sizes must be positive");
@@ -135,7 +139,7 @@ bool LIRS<PageT, KeyT>::Hit (const KeyT& key)
     auto it = key_map_.find (key);
 
     if (it == key_map_.end ()) {
-        AddNewPage (key, GetSlowPage<PageT, KeyT> (key));
+        AddNewPage (key, get_slow_page_ (key));
 
         return false;
     }
@@ -145,7 +149,7 @@ bool LIRS<PageT, KeyT>::Hit (const KeyT& key)
     Node* node = it->second;
 
     if (node->is_resident_ == false) {
-        RestoreNonResidentHIR (key, GetSlowPage<PageT, KeyT> (key));
+        RestoreNonResidentHIR (key, get_slow_page_ (key));
 
         return false;
     }
@@ -410,7 +414,7 @@ LIRS<PageT, KeyT>::Insert (const KeyT& key)
         return std::nullopt;
     }
 
-    PageT page = GetSlowPage<PageT, KeyT> (key);
+    PageT page = get_slow_page_ (key);
 
     return Insert (key, std::move (page));
 }

@@ -5,16 +5,13 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <list>
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
-
-#include "input.hpp"
-
-//--------------------------------------------------------------------------------
 
 namespace caches {
 
@@ -64,6 +61,7 @@ private:
     size_t size_;
     size_t capacity_;
     size_t recent_target_;
+    std::function<PageT (const KeyT&)> get_slow_page_;
 
     //==================================================
 
@@ -82,10 +80,11 @@ private:
 
 public:
 
-    ARC (std::size_t capacity) :
+    ARC (std::size_t capacity, std::function<PageT (const KeyT&)> get_slow_page) :
         size_          (0),
         capacity_      (capacity),
-        recent_target_ (0)
+        recent_target_ (0),
+        get_slow_page_ (std::move (get_slow_page))
     {
         if (capacity == 0) {
             throw std::invalid_argument ("Capacity must be positive");
@@ -341,7 +340,7 @@ bool ARC<PageT, KeyT>::Hit (const KeyT& key)
     auto it = key_map_.find (key);
 
     if (it == key_map_.end ()) {
-        AddNewPage (key, GetSlowPage<PageT, KeyT> (key));
+        AddNewPage (key, get_slow_page_ (key));
 
         return false;
     }
@@ -359,12 +358,12 @@ bool ARC<PageT, KeyT>::Hit (const KeyT& key)
             return true;
 
         case ListType::RecentHistory:
-            RestoreRecentPage (key, GetSlowPage<PageT, KeyT> (key));
+            RestoreRecentPage (key, get_slow_page_ (key));
 
             return false;
 
         case ListType::FrequentHistory:
-            RestoreFrequentPage (key, GetSlowPage<PageT, KeyT> (key));
+            RestoreFrequentPage (key, get_slow_page_ (key));
 
             return false;
     }
@@ -394,7 +393,7 @@ ARC<PageT, KeyT>::Insert (const KeyT& key)
         return std::nullopt;
     }
 
-    PageT page = GetSlowPage<PageT, KeyT> (key);
+    PageT page = get_slow_page_ (key);
 
     return Insert (key, std::move (page));
 }

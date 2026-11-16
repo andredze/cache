@@ -1,17 +1,14 @@
-
 #pragma once
 
 //--------------------------------------------------------------------------------
 
 #include <cstddef>
+#include <functional>
 #include <list>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
-
-#include "input.hpp"
-
-//--------------------------------------------------------------------------------
 
 namespace caches {
 
@@ -36,14 +33,17 @@ private:
 
     size_t capacity_;
 
+    std::function<PageT (const KeyT&)> get_slow_page_;
+
     //==================================================
 
 public:
 
     //==================================================
 
-    LRU (std::size_t capacity) :
-    capacity_ (capacity)
+    LRU (std::size_t capacity, std::function<PageT (const KeyT&)> get_slow_page) :
+    capacity_      (capacity),
+    get_slow_page_ (std::move (get_slow_page))
     {
         if (capacity == 0) {
             throw std::invalid_argument ("Capacity must be positive");
@@ -83,7 +83,7 @@ bool LRU<PageT, KeyT>::Hit (const KeyT& key)
         return true;
     }
 
-    PageT page = GetSlowPage<PageT, KeyT> (key);
+    PageT page = get_slow_page_ (key);
 
     if (cache_.size () == capacity_) {
         const KeyT& victim_key = cache_.back ().first;
@@ -120,7 +120,7 @@ LRU<PageT, KeyT>::Insert (const KeyT& key)
         return std::nullopt;
     }
 
-    PageT page = GetSlowPage<PageT, KeyT> (key);
+    PageT page = get_slow_page_ (key);
 
     return Insert (key, std::move (page));
 }

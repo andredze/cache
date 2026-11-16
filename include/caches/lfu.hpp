@@ -3,15 +3,14 @@
 //--------------------------------------------------------------------------------
 
 #include <cstddef>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <list>
 #include <new>
+#include <optional>
 #include <unordered_map>
-
-#include "input.hpp"
-
-//--------------------------------------------------------------------------------
+#include <utility>
 
 namespace caches {
 
@@ -43,6 +42,8 @@ struct Node {
     size_t capacity_;
     size_t min_freq_;
 
+    std::function<PageT (const KeyT&)> get_slow_page_;
+
 //==================================================
 
     std::optional<Victim> DeleteLowFreqElem ();
@@ -55,10 +56,11 @@ struct Node {
 
 public:
 
-    LFU (std::size_t input_capacity) :
+    LFU (std::size_t input_capacity, std::function<PageT (const KeyT&)> get_slow_page) :
         size_     (0),
         capacity_ (input_capacity),
-        min_freq_ (0)
+        min_freq_ (0),
+        get_slow_page_ (std::move (get_slow_page))
         {};
 
     ~LFU () {
@@ -205,7 +207,7 @@ bool LFU<PageT, KeyT>::Hit (const KeyT& key)
     }
 
     if (Contains (key) == false) {
-        PageT page = GetSlowPage<PageT,KeyT>(key);
+        PageT page = get_slow_page_ (key);
 
         Add (page, key);
 
@@ -233,11 +235,9 @@ LFU<PageT, KeyT>::Insert (const KeyT& key, PageT page)
         return Add (page, key);
     }
 
-    PageT page = key_map_[key]->value_;
-
     MoveNodeToIncreasedFreq (key);
 
-    return nullopt;
+    return std::nullopt;
 }
 
 //--------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ template <typename PageT, typename KeyT>
 std::optional<typename LFU<PageT, KeyT>::Victim>
 LFU<PageT, KeyT>::Insert (const KeyT& key)
 {
-    PageT page = GetSlowPage (key);
+    PageT page = get_slow_page_ (key);
 
     return Insert (key, page);
 }
