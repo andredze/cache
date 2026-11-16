@@ -6,8 +6,7 @@
 #include <list>
 #include <cstddef>
 #include <cassert>
-
-#include "input.hpp"
+#include <optional>
 
 //--------------------------------------------------------------------------------
 
@@ -33,6 +32,7 @@ template <typename KeyT>
 class LinkedMap {
 private:
     using ListIt = std::list<KeyT>::iterator;
+
     std::list<KeyT> cache_;
 
     std::unordered_map<KeyT, ListIt> map_;
@@ -52,10 +52,28 @@ public:
     bool Contains       (const KeyT& key) const;
     bool TryMoveToFront (const KeyT& key);
     void PushFront      (const KeyT& key);
+    bool Erase          (const KeyT& key);
     KeyT PopBack        ();
 
     std::size_t GetSize () const;
 };
+
+//--------------------------------------------------------------------------------
+
+template <typename KeyT>
+bool LinkedMap<KeyT>::Erase (const KeyT& key)
+{
+    auto it = map_.find (key);
+
+    if (it == map_.end ()) {
+        return false;
+    }
+
+    cache_.erase (it->second);
+    map_.erase (it);
+
+    return true;
+}
 
 //--------------------------------------------------------------------------------
 
@@ -133,6 +151,8 @@ template <
 >
 class TwoQ {
 private:
+    using Victim = std::pair<KeyT, PageT>;
+
     LoaderT slow_get_page_;
 
     std::unordered_map<KeyT, PageT> pages_;
@@ -145,7 +165,7 @@ private:
     LinkedMap<KeyT> in_cache_;
     LinkedMap<KeyT> out_cache_;
 
-    void StorePageInMemory (KeyT key, PageT& page);
+    bool TryHit (const KeyT& key);
 
 public:
     TwoQ (
@@ -177,6 +197,11 @@ public:
 
     bool  Hit     (const KeyT& key);
     PageT GetPage (const KeyT& key);
+
+    std::optional<Victim> Insert (const KeyT& key);
+    std::optional<Victim> Insert (const KeyT& key, PageT page);
+
+    std::optional<PageT> Extract (const KeyT& key);
 };
 
 //————————————————————————————————————————————————————————————————————————————————
@@ -222,36 +247,15 @@ bool TwoQ<PageT, KeyT, LoaderT>::IsFull () const
 //————————————————————————————————————————————————————————————————————————————————
 
 template <typename PageT, typename KeyT, typename LoaderT>
-void TwoQ<PageT, KeyT, LoaderT>::StorePageInMemory (KeyT key, PageT& page)
+bool TwoQ<PageT, KeyT, LoaderT>::TryHit (const KeyT& key)
 {
-    if (!IsFull ()) {
-        pages_[key] = page;
-        return;
+    if (!pages_.contains (key)) {
+        return false;
     }
 
-    // else if
-    if (in_cache_.GetSize () > size_threshold_in_) {
-        KeyT victim = in_cache_.PopBack ();
-        pages_.erase (victim);
+    hot_cache_.TryMoveToFront (key);
 
-        out_cache_.PushFront (victim);
-
-        if (out_cache_.GetSize () > size_threshold_out_) {
-            out_cache_.PopBack ();
-        }
-
-        pages_[key] = page;
-
-        return;
-    }
-
-    // else
-    KeyT victim = hot_cache_.PopBack ();
-    pages_.erase (victim);
-
-    // do not put in out_cache_
-
-    pages_[key] = page;
+    return true;
 }
 
 //————————————————————————————————————————————————————————————————————————————————
@@ -259,41 +263,111 @@ void TwoQ<PageT, KeyT, LoaderT>::StorePageInMemory (KeyT key, PageT& page)
 template <typename PageT, typename KeyT, typename LoaderT>
 bool TwoQ<PageT, KeyT, LoaderT>::Hit (const KeyT& key)
 {
-    if (capacity_ == 0) {
-        return false;
-    }
-
-    // if key is in the hot_cache
-    if (hot_cache_.TryMoveToFront (key)) {
-        assert (pages_.contains (key));
+    if (TryHit (key)) {
         return true;
     }
 
-    // miss
-    if (out_cache_.Contains (key)) {
-        PageT page = slow_get_page_ (key);
-        StorePageInMemory (key, page);
-
-        hot_cache_.PushFront (key);
-
-        assert (pages_.contains (key));
-        return false;
+    if (capacity_ != 0) {
+        Insert (key, slow_get_page_ (key));
     }
 
-    if (in_cache_.Contains (key)) {
-        // do nothing;
-        assert (pages_.contains (key));
-        return true;
-    }
-
-    // miss
-    PageT page = slow_get_page_ (key);
-    StorePageInMemory (key, page);
-
-    in_cache_.PushFront (key);
-
-    assert (pages_.contains (key));
     return false;
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT, typename LoaderT>
+std::optional<typename TwoQ<PageT, KeyT, LoaderT>::Victim>
+TwoQ<PageT, KeyT, LoaderT>::Insert (const KeyT& key)
+{
+    if (capacity_ == 0 || TryHit (key)) {
+        return std::nullopt;
+    }
+
+    PageT page = slow_get_page_ (key);
+
+    return Insert (key, std::move (page));
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT, typename LoaderT>
+std::optional<typename TwoQ<PageT, KeyT, LoaderT>::Victim>
+TwoQ<PageT, KeyT, LoaderT>::Insert (const KeyT& key, PageT page)
+{
+    if (capacity_ == 0 || TryHit (key)) {
+        return std::nullopt;
+    }
+
+    // Remove the returning key before eviction adds new history.
+    const bool was_in_out = out_cache_.Erase (key);
+
+    std::optional<Victim> victim;
+
+    if (IsFull ()) {
+        const bool evict_from_in =
+            in_cache_.GetSize () > size_threshold_in_
+            || hot_cache_.GetSize () == 0;
+
+        KeyT victim_key = evict_from_in
+            ? in_cache_.PopBack ()
+            : hot_cache_.PopBack ();
+
+        auto victim_it = pages_.find (victim_key);
+
+        assert (victim_it != pages_.end ());
+
+        victim.emplace (victim_key, std::move (victim_it->second));
+        pages_.erase (victim_it);
+
+        if (evict_from_in) {
+            out_cache_.PushFront (victim_key);
+
+            if (out_cache_.GetSize () > size_threshold_out_) {
+                out_cache_.PopBack ();
+            }
+        }
+    }
+
+    pages_.emplace (key, std::move (page));
+
+    if (was_in_out) {
+        hot_cache_.PushFront (key);
+    }
+    else {
+        in_cache_.PushFront (key);
+    }
+
+    return victim;
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT, typename LoaderT>
+std::optional<PageT>
+TwoQ<PageT, KeyT, LoaderT>::Extract (const KeyT& key)
+{
+    if (!TryHit (key)) {
+        return std::nullopt;
+    }
+
+    auto it = pages_.find (key);
+
+    PageT page = std::move (it->second);
+    pages_.erase (it);
+
+    if (in_cache_.Erase (key)) {
+        out_cache_.PushFront (key);
+
+        if (out_cache_.GetSize () > size_threshold_out_) {
+            out_cache_.PopBack ();
+        }
+    }
+    else {
+        hot_cache_.Erase (key);
+    }
+
+    return page;
 }
 
 //--------------------------------------------------------------------------------
