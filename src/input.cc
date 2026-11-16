@@ -12,6 +12,7 @@ InputErr_t NumSequence::Read (std::istream& input_stream)
     while (input_stream >> cur_number) {
         queue_.push (cur_number);
     }
+    
 
     if (input_stream.eof ()) {
         return InputErr_t::Success;

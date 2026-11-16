@@ -103,7 +103,7 @@ public:
 
     //==================================================
 
-    bool Contains (const KeyT& key) const;
+    bool Contain (const KeyT& key) const;
     bool Hit      (const KeyT& key);
     PageT GetPage (const KeyT& key);
 
@@ -116,7 +116,7 @@ public:
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool ARC<PageT, KeyT>::Contains (const KeyT& key) const
+bool ARC<PageT, KeyT>::Contain (const KeyT& key) const
 {
     return pages_.contains (key);
 }

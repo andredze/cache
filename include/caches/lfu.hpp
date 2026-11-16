@@ -206,7 +206,7 @@ bool LFU<PageT, KeyT>::Hit (const KeyT& key)
         return false;
     }
 
-    if (Contains (key) == false) {
+    if (Contain (key) == false) {
         PageT page = get_slow_page_ (key);
 
         Add (page, key);
@@ -228,10 +228,10 @@ std::optional<typename LFU<PageT, KeyT>::Victim>
 LFU<PageT, KeyT>::Insert (const KeyT& key, PageT page)
 {
     if (capacity_ == 0) {
-        return false;
+        return std::nullopt;
     }
 
-    if (Contains (key) == false) {
+    if (Contain (key) == false) {
         return Add (page, key);
     }
 
