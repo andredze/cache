@@ -95,7 +95,7 @@ public:
     LIRS (const LIRS&) = delete;
     LIRS& operator= (const LIRS&) = delete;
 
-    bool Contain (const KeyT& key) const;
+    bool Contains (const KeyT& key) const;
     bool Hit      (const KeyT& key);
     PageT GetPage (const KeyT& key);
 
@@ -108,7 +108,7 @@ public:
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LIRS<PageT, KeyT>::Contain (const KeyT& key) const
+bool LIRS<PageT, KeyT>::Contains (const KeyT& key) const
 {
     auto it = key_map_.find (key);
 

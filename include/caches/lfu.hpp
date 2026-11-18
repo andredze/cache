@@ -206,7 +206,7 @@ bool LFU<PageT, KeyT>::Hit (const KeyT& key)
         return false;
     }
 
-    if (Contain (key) == false) {
+    if (Contains (key) == false) {
         PageT page = get_slow_page_ (key);
 
         Add (page, key);

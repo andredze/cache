@@ -67,7 +67,7 @@ public:
 template <typename PageT, typename KeyT>
 bool LRU<PageT, KeyT>::Contain (const KeyT& key)
 {
-    return hash_map_.contain (key);
+    return hash_map_.contains (key);
 }
 
 //--------------------------------------------------------------------------------

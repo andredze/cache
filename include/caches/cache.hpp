@@ -26,39 +26,27 @@ template <typename PageT, typename KeyT>
 class MultiLvlCache {
 
 public:
-
     using Victim = std::pair<KeyT, PageT>;
     using Loader = std::function<PageT (const KeyT&)>;
 
 private:
-
-    //==================================================
-
-    using TwoQLevel = caches::TwoQ<PageT, KeyT, Loader>;
-
     using Algorithm = std::variant<
         caches::ARC <PageT, KeyT>,
         caches::LRU <PageT, KeyT>,
         caches::LFU <PageT, KeyT>,
         caches::LIRS<PageT, KeyT>,
-        TwoQLevel
+        caches::TwoQ<PageT, KeyT>
     >;
 
-    //==================================================
-
     std::deque<Algorithm> algorithms_;
-
-    //==================================================
 
 public:
 
     //==================================================
-
+    
     enum class Policy {
         LRU, LFU, LIRS, ARC, TwoQ
     };
-
-    //==================================================
 
     struct LevelConfig {
         Policy policy_;
@@ -115,8 +103,7 @@ public:
 
     ~MultiLvlCache() = default;
 
-    bool Hit (KeyT key);
-
+    bool Hit (const KeyT& key);
 };
 
 //--------------------------------------------------------------------------------
@@ -127,7 +114,7 @@ bool MultiLvlCache<PageT, KeyT>::Hit (const KeyT& key)
     int hit_level = -1;
 
     for (int i = 0; i < algorithms_.size (); i++) {
-        if (algorithms_[i].contain (key)) {
+        if (algorithms_[i].contains (key)) {
             hit_level = i;
         }
     }
@@ -145,7 +132,9 @@ bool MultiLvlCache<PageT, KeyT>::Hit (const KeyT& key)
     }
 
     PageT page = algorithms_[hit_level].GetPage (key);
-    int victim_key = key;
+
+    KeyT victim_key = key;
+
     algorithms_[hit_level].Extract (key);
     for (int i; i < hit_level; i++) {
         Victim victim = algorithms_[i].Insert (key, page);

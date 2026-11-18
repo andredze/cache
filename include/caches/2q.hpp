@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cassert>
 #include <optional>
+#include <functional>
 
 //--------------------------------------------------------------------------------
 
@@ -147,19 +148,20 @@ constexpr double kDefaultPercentageForThresholdOut = 50;
 template <
     typename PageT,
     typename KeyT,
-    typename LoaderT = PageT (*)(const KeyT&)
+    typename LoaderT = std::function<PageT (const KeyT&)>
 >
 class TwoQ {
-private:
+public:
     using Victim = std::pair<KeyT, PageT>;
 
+private:
     LoaderT slow_get_page_;
 
     std::unordered_map<KeyT, PageT> pages_;
 
-    const std::size_t capacity_;
-    const std::size_t size_threshold_in_;
-    const std::size_t size_threshold_out_;
+    std::size_t capacity_;
+    std::size_t size_threshold_in_;
+    std::size_t size_threshold_out_;
 
     LinkedMap<KeyT> hot_cache_;
     LinkedMap<KeyT> in_cache_;
@@ -193,6 +195,7 @@ public:
     std::size_t GetSizeThresholdOut () const;
     std::size_t GetSize             () const;
 
+    bool Contains (const KeyT& key) const;
     bool IsFull () const;
 
     bool  Hit     (const KeyT& key);
@@ -203,6 +206,14 @@ public:
 
     std::optional<PageT> Extract (const KeyT& key);
 };
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT, typename LoaderT>
+bool TwoQ<PageT, KeyT, LoaderT>::Contains (const KeyT& key) const
+{
+    return pages_.contains (key);
+}
 
 //————————————————————————————————————————————————————————————————————————————————
 
@@ -347,11 +358,11 @@ template <typename PageT, typename KeyT, typename LoaderT>
 std::optional<PageT>
 TwoQ<PageT, KeyT, LoaderT>::Extract (const KeyT& key)
 {
-    if (!TryHit (key)) {
+    auto it = pages_.find (key);
+
+    if (it == pages_.end ()) {
         return std::nullopt;
     }
-
-    auto it = pages_.find (key);
 
     PageT page = std::move (it->second);
     pages_.erase (it);
