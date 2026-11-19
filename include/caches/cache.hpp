@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <utility>
 #include <variant>
+#include <optional>
 
 #include "arc.hpp"
 #include "lru.hpp"
@@ -22,15 +23,25 @@ namespace caches {
 
 //--------------------------------------------------------------------------------
 
+enum class Policy {
+    LRU,
+    LFU,
+    LIRS,
+    ARC,
+    TwoQ
+};
+
+//--------------------------------------------------------------------------------
+
 template <typename PageT, typename KeyT>
-class MultiLvlCache {
+class Algorithm {
 
 public:
     using Victim = std::pair<KeyT, PageT>;
     using Loader = std::function<PageT (const KeyT&)>;
 
 private:
-    using Algorithm = std::variant<
+    using Storage = std::variant<
         caches::ARC <PageT, KeyT>,
         caches::LRU <PageT, KeyT>,
         caches::LFU <PageT, KeyT>,
@@ -38,70 +49,138 @@ private:
         caches::TwoQ<PageT, KeyT>
     >;
 
-    std::deque<Algorithm> algorithms_;
+    Storage storage_;
 
-public:
-
-    //==================================================
-    
-    enum class Policy {
-        LRU, LFU, LIRS, ARC, TwoQ
-    };
-
-    struct LevelConfig {
-        Policy policy_;
-        std::size_t capacity;
-        std::size_t hir_size = 0;
-    };
-
-    //==================================================
-
-    MultiLvlCache (std::initializer_list<LevelConfig> levels, const Loader& get_slow_page)
+    static Storage MakeStorage (Policy        policy,
+                                std::size_t   capacity,
+                                std::size_t   hir_size,
+                                const Loader& loader)
     {
-        for (const auto& level : levels) {
-            if (level.capacity == 0) {
-                throw std::invalid_argument ("Cache level capacity must be positive");
+        if (capacity == 0) {
+            throw std::invalid_argument ("Cache capacity must be positive");
+        }
+
+        switch (policy)
+        {
+        case Policy::LRU:
+            return Storage (std::in_place_type<caches::LRU<PageT, KeyT>>,
+                            capacity, loader);
+
+        case Policy::LFU:
+            return Storage (std::in_place_type<caches::LFU<PageT, KeyT>>,
+                            capacity, loader);
+
+        case Policy::ARC:
+            return Storage (std::in_place_type<caches::ARC<PageT, KeyT>>,
+                            capacity, loader);
+
+        case Policy::TwoQ:
+            return Storage (std::in_place_type<caches::TwoQ<PageT, KeyT>>,
+                            capacity, loader);
+
+        case Policy::LIRS:
+            if (hir_size == 0 || hir_size >= capacity) {
+                throw std::invalid_argument ("LIRS requires 0 < HIR size < capacity");
             }
 
-            switch (level.policy_) {
-                case Policy::LRU:
-                    algorithms_.emplace_back (
-                        std::in_place_type<caches::LRU<PageT, KeyT>>,
-                        level.capacity, get_slow_page
-                    );
-                    break;
-                case Policy::LFU:
-                    algorithms_.emplace_back (
-                        std::in_place_type<caches::LFU<PageT, KeyT>>,
-                        level.capacity, get_slow_page
-                    );
-                    break;
-                case Policy::ARC:
-                    algorithms_.emplace_back (
-                        std::in_place_type<caches::ARC<PageT, KeyT>>,
-                        level.capacity, get_slow_page
-                    );
-                    break;
-                case Policy::LIRS:
-                    if (level.hir_size == 0 || level.hir_size >= level.capacity) {
-                        throw std::invalid_argument ("LIRS requires 0 < HIR size < capacity");
-                    }
-                    algorithms_.emplace_back (
-                        std::in_place_type<caches::LIRS<PageT, KeyT>>,
-                        level.capacity - level.hir_size, level.hir_size, get_slow_page
-                    );
-                    break;
-                case Policy::TwoQ:
-                    algorithms_.emplace_back (
-                        std::in_place_type<TwoQLevel>,
-                        level.capacity, get_slow_page
-                    );
-                    break;
-            }
+            return Storage (std::in_place_type<caches::LIRS<PageT, KeyT>>,
+                            capacity - hir_size, hir_size, loader);
+
+        default:
+            throw std::invalid_argument ("Unknown cache policy");
         }
     }
 
-    ~MultiLvlCache() = default;
+public:
+
+    Algorithm (Policy        policy,
+               std::size_t   capacity,
+               std::size_t   hir_size,
+               const Loader& loader)
+    : storage_ (MakeStorage (policy, capacity, hir_size, loader))
+    {};
+
+    bool Contains (const KeyT& key);
+    bool Hit      (const KeyT& key);
+
+    std::optional<Victim> Insert  (const KeyT& key, PageT page);
+    std::optional<PageT>  Extract (const KeyT& key);
+};
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT>
+bool Algorithm<PageT, KeyT>::Contains (const KeyT& key)
+{
+    return std::visit ([&](auto & cache) {
+                return cache.Contains (key);
+            },
+            storage_);
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT>
+bool Algorithm<PageT, KeyT>::Hit (const KeyT& key)
+{
+    return std::visit ([&](auto & cache) {
+                return cache.Hit (key);
+            },
+            storage_);
+}
+
+//————————————————————————————————————————————————————————————————————————————————
+
+template <typename PageT, typename KeyT>
+std::optional<typename Algorithm<PageT, KeyT>::Victim>
+Algorithm<PageT, KeyT>::Insert (const KeyT& key, PageT page)
+{
+    return std::visit ([&](auto & cache) {
+                return cache.Insert (key, page);
+            },
+            storage_);
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+std::optional<PageT>
+Algorithm<PageT, KeyT>::Extract (const KeyT& key)
+{
+    return std::visit ([&](auto & cache) {
+                return cache.Extract (key);
+            },
+            storage_);
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
+class MultiLvlCache {
+public:
+    using Victim = std::pair<KeyT, PageT>;
+    using Loader = std::function<PageT (const KeyT&)>;
+
+private:
+    using Algorithm = caches::Algorithm<PageT, KeyT>;
+    std::deque<Algorithm> algorithms_;
+
+    Loader get_slow_page_;
+
+    //==================================================
+    
+public:
+
+    struct LevelConfig {
+        Policy policy_;
+        std::size_t capacity_;
+        std::size_t hir_size_ = 0;
+    };
+
+    //==================================================
+
+    MultiLvlCache (std::initializer_list<LevelConfig> levels,
+                   const Loader& get_slow_page);
 
     bool Hit (const KeyT& key);
 };
@@ -109,21 +188,59 @@ public:
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
+MultiLvlCache<PageT, KeyT>::MultiLvlCache (
+    std::initializer_list<LevelConfig> levels,
+    const Loader&                      get_slow_page
+) :
+    get_slow_page_ (std::move (get_slow_page))
+{
+    if (levels.size () == 0) {
+        throw std::invalid_argument ("At least one cache level is required");
+    }
+
+    if (!get_slow_page_) {
+        throw std::invalid_argument ("Page loader can not be empty");
+    }
+
+    for (const auto& level : levels) {
+        if (level.capacity_ == 0) {
+            throw std::invalid_argument ("Cache level capacity must be positive");
+        }
+
+        algorithms_.emplace_back (
+            level.policy_,
+            level.capacity_,
+            level.hir_size_,
+            get_slow_page_
+        );
+    }
+}
+
+//--------------------------------------------------------------------------------
+
+template <typename PageT, typename KeyT>
 bool MultiLvlCache<PageT, KeyT>::Hit (const KeyT& key)
 {
+#if 0 
     int hit_level = -1;
 
-    for (int i = 0; i < algorithms_.size (); i++) {
-        if (algorithms_[i].contains (key)) {
+    std::size_t algorithms_size = algorithms_.size ();
+
+    for (std::size_t i = 0; i != algorithms_size; ++i) {
+        Algorithm& algorithm = algorithms_[i];
+
+        if (algorithms_[i].Contains (key)) {
             hit_level = i;
         }
     }
 
     if (hit_level == -1) {
-        PageT page = GetSlowPage (key);
-        int victim_key = key;
-        for (int i; i < algorithms_.size (); i++) {
-            Victim victim = algorithms_[i].insert (victim_key, page);
+        PageT page = get_slow_page_ (key);
+
+        KeyT& victim_key = key;
+
+        for (int i = 0; i < algorithms_.size (); i++) {
+            Victim victim = algorithms_[i].Insert (victim_key, page);
             victim_key = victim.first ();
             page = victim.second ();
         }
@@ -143,6 +260,8 @@ bool MultiLvlCache<PageT, KeyT>::Hit (const KeyT& key)
     }
 
     return true;
+#endif 
+    throw std::logic_error("MultiLvlCache::Hit is not implemented");
 }
 
 //--------------------------------------------------------------------------------

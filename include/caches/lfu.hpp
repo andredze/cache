@@ -231,7 +231,7 @@ LFU<PageT, KeyT>::Insert (const KeyT& key, PageT page)
         return std::nullopt;
     }
 
-    if (Contain (key) == false) {
+    if (Contains (key) == false) {
         return Add (page, key);
     }
 

@@ -52,9 +52,9 @@ public:
 
     //==================================================
 
-    bool  Contain (const KeyT& key);
-    bool  Hit     (const KeyT& key);
-    PageT GetPage (const KeyT& key);
+    bool  Contains (const KeyT& key);
+    bool  Hit      (const KeyT& key);
+    PageT GetPage  (const KeyT& key);
 
     std::optional<Node> Insert (const KeyT& key);
     std::optional<Node> Insert (const KeyT& key, PageT page);
@@ -65,7 +65,7 @@ public:
 //--------------------------------------------------------------------------------
 
 template <typename PageT, typename KeyT>
-bool LRU<PageT, KeyT>::Contain (const KeyT& key)
+bool LRU<PageT, KeyT>::Contains (const KeyT& key)
 {
     return hash_map_.contains (key);
 }
@@ -115,7 +115,7 @@ template <typename PageT, typename KeyT>
 std::optional<typename LRU<PageT, KeyT>::Node>
 LRU<PageT, KeyT>::Insert (const KeyT& key)
 {
-    if (Contain (key)) {
+    if (Contains (key)) {
         Hit (key);
         return std::nullopt;
     }
